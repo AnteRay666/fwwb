@@ -1,29 +1,50 @@
-# fwwb
+# 项目结构
 
-This template should help get you started developing with Vue 3 in Vite.
+设定界面如下。
 
-## Recommended IDE Setup
+注册登录界面：
+RegisterLoginPage.vue
+整体来说，这是一个小型弹窗，在主界面的左上方有一个按钮，点击后弹出注册登录界面。
+注册登录界面有两个子界面：
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+默认是登录界面：LoginPage.vue
+配置路由：/login
+登录界面有两个输入框，一个是用户名，一个是密码。
+登录界面有一个按钮，点击后会发送登录请求。
+登录成功后，会跳转到主界面。
 
-## Customize configuration
+注册界面：RegisterPage.vue
+配置路由：/register
+输入用户名、密码、确认密码即可注册成功。
+注册成功后，会自动跳转到登录界面。
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+主界面：
+MainPage
+默认在没有登录的情况下，中心界面是一个聊天框体。
+这个聊天框体是一个组件，它的功能是：
+给用户提供输入框，让用户输入消息。
+给用户提供一个选择模型的下拉框，让用户选择模型。
+给用户提供一个发送按钮，让用户发送消息。
 
-## Project Setup
+详细设计：
+主界面分为2个部分，左侧是一个侧边栏(可以隐藏)，右侧是一个主界面。
+主界面中，分为2个组件，上面是一个聊天框体，用于显示用户的输入和AI的回复。
+下面是一个输入框，用于用户输入消息。
+输入框中，有一个选择模型的下拉框，用于用户选择模型。
+输入框中，有一个发送按钮，用于用户发送消息。
 
-```sh
-npm install
-```
 
-### Compile and Hot-Reload for Development
 
-```sh
-npm run dev
-```
 
-### Compile and Minify for Production
 
-```sh
-npm run build
-```
+左侧是一个侧边栏。
+这个侧边栏是一个组件，它的功能是：
+一个按钮，点击会隐藏侧边栏，再次点击会显示侧边栏。
+一个按钮，点击会显示一个设置按钮。点击会显示一个设置按钮。
+一个按钮开启新对话。
+
+设置界面：
+SettingsPage
+设置界面可以更改主题，一般是深色和浅色，默认跟随系统。
+设置界面可以更改语言，一般是中文和英文，默认跟随系统。
+设置界面可以注销用户。

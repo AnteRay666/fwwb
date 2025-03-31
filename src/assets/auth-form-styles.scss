@@ -1,0 +1,71 @@
+// auth-form-styles.scss
+.auth-form {
+  padding: 30px 20px;
+  max-width: 380px;
+  margin: 0 auto;
+  
+  :deep(.el-form-item) {
+    margin-bottom: 24px !important;
+  }
+
+  :deep(.el-form-item__error) {
+    position: relative !important;
+    margin-top: 4px;
+    padding-left: 12px;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .form-title {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 24px;
+    color: #303133;
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, #409EFF, #66b1ff);
+    }
+  }
+
+  :deep(.el-input__inner) {
+    height: 48px;
+    border-radius: 8px;
+    border: 1px solid #dcdfe6;
+    
+    &:focus {
+      border-color: #409EFF;
+      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    }
+  }
+
+  .submit-btn {
+    width: 100%;
+    height: 48px;
+    margin-top: 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+  }
+
+  .form-footer {
+    margin-top: 25px;
+    text-align: center;
+    
+    .el-link {
+      font-size: 14px;
+    }
+  }
+}

@@ -1,216 +1,220 @@
-<!-- SiderPage.vue -->
 <template>
-  <div class="sider-container">
+  <div class="sider-container" :class="{ 'collapsed': isCollapsed }">
     <!-- 折叠状态 -->
-    <div v-show="isCollapsed" class="collapsed-content">
-      <div class="icon-group">
-        <el-tooltip content="新对话" placement="right">
-          <el-button class="icon-btn" @click="startNewChat">
-            <el-icon>
-              <Plus />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
-
-        <el-tooltip content="展开侧边栏" placement="right">
-          <el-button class="icon-btn" @click="$emit('toggle-collapse')">
-            <el-icon>
-              <Expand />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
-
-        <el-tooltip content="设置" placement="right">
-          <el-button class="icon-btn" @click="openSettings">
-            <el-icon>
-              <Setting />
-            </el-icon>
-          </el-button>
-        </el-tooltip>
+    <div v-show="isCollapsed" class="collapsed-mode">
+      <div class="icon-wrapper">
+        <div class="icon-group">
+          <el-tooltip content="展开" placement="right">
+            <el-button class="icon-btn" @click="$emit('toggle')">
+              <el-icon>
+                <Expand />
+              </el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
+        <div class="icon-group">
+          <!-- 统一使用icon-btn样式 -->
+          <el-tooltip content="新对话" placement="right">
+            <el-button class="icon-btn" @click="startNewChat">
+              <el-icon>
+                <Plus />
+              </el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
+        <div class="settings-btn">
+          <el-tooltip content="设置" placement="right">
+            <el-button class="icon-btn" @click="openSettings">
+              <el-icon>
+                <Setting />
+              </el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
       </div>
     </div>
 
     <!-- 展开状态 -->
-    <div v-show="!isCollapsed" class="expanded-content">
-      <div class="header-bar">
-        <el-input v-model="searchQuery" placeholder="搜索历史记录" clearable suffix-icon="Search" class="search-input" />
-        <el-button class="collapse-btn" @click="$emit('toggle-collapse')">
-          <el-icon>
-            <Fold />
+    <div v-show="!isCollapsed" class="expanded-mode">
+
+      <!-- 统一使用icon-btn样式 -->
+      <el-button class="icon-btn collapse-btn" @click="$emit('toggle')">
+        <el-icon>
+          <Fold />
+        </el-icon>
+      </el-button>
+
+
+
+      <div class="new-chat-btn">
+        <el-button type="primary" round @click="startNewChat" class="full-width-btn">
+          <el-icon class="mr-2">
+            <Plus />
           </el-icon>
+          新对话
         </el-button>
       </div>
 
-      <div class="new-chat-btn">
-        <el-button type="primary" round @click="startNewChat">
-          <el-icon>
-            <Plus />
-          </el-icon>
-          <span>新对话</span>
-        </el-button>
+      <div class="header">
+        <span class="title">对话历史</span>
       </div>
 
       <div class="history-list">
         <el-scrollbar>
-          <el-menu :default-active="activeIndex" @select="handleSelect" class="history-menu">
-            <el-menu-item v-for="item in filteredHistory" :key="item.id" :index="item.id"
-              @contextmenu.prevent="openContextMenu($event, item)">
+          <el-menu :default-active="activeIndex" @select="handleSelect">
+            <el-menu-item v-for="item in chatHistory" :key="item.id" :index="item.id" class="history-item">
               <el-icon>
                 <ChatDotRound />
               </el-icon>
-              <span class="truncate-text">{{ item.title }}</span>
+              <span class="truncate">{{ item.title }}</span>
             </el-menu-item>
           </el-menu>
         </el-scrollbar>
       </div>
+
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue'
-import { Plus, Fold, Expand, Setting, ChatDotRound } from '@element-plus/icons-vue'
+import { Fold, Expand, Plus, Setting, ChatDotRound } from '@element-plus/icons-vue'
 
-const props = defineProps({
+defineProps({
   isCollapsed: Boolean
 })
 
-const emit = defineEmits(['toggle-collapse', 'start-resize'])
+const chatHistory = [
+  { id: '1', title: '关于项目架构的讨论' },
+  { id: '2', title: '技术选型会议记录' },
+  { id: '3', title: '用户反馈收集与分析' }
+]
 
-const searchQuery = ref('')
-const activeIndex = ref('')
-const chatHistory = ref([
-  { id: '1', title: '如何学习Vue3' },
-  { id: '2', title: 'Python数据分析' },
-  { id: '3', title: '项目需求讨论' }
-
-
-]) // 保持原有数据
-
-const filteredHistory = computed(() => {
-  return chatHistory.value.filter(item =>
-    item.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
-
-const openContextMenu = (e, item) => {
-  emit('open-context-menu', {
-    x: e.clientX,
-    y: e.clientY,
-    items: [
-      { command: 'delete', label: '删除对话' },
-      { command: 'rename', label: '重命名' }
-    ],
-    item
-  })
-}
-
-// 其他方法保持原有逻辑...
+const startNewChat = () => { }
+const openSettings = () => { }
 </script>
 
-<!-- 样式部分保持原有优化 -->
-<style scoped>
+<style scoped lang="scss">
 .sider-container {
-  --collapsed-width: 64px;
-  --expanded-width: 240px;
   height: 100%;
   background: #f7f7f8;
-  transition: width 0.3s ease;
-}
+  border-right: 1px solid #e4e7ed;
+  transition: all 0.3s ease;
 
-/* 折叠状态样式 */
-.sider-container.collapsed {
-  width: var(--collapsed-width);
-}
+  /* 统一图标按钮样式 */
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
 
-.collapsed-content {
-  padding: 12px 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
 
-.icon-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
+    .el-icon {
+      font-size: 18px;
+      color: #606266;
+    }
+  }
 
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 8px;
-}
+  /* 折叠状态样式 */
+  .collapsed-mode {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
 
-/* 展开状态样式 */
-.sider-container:not(.collapsed) {
-  width: var(--expanded-width);
-}
+    .icon-wrapper {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-.expanded-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-}
+    .icon-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: auto;
+    }
 
-.header-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 0 8px;
-}
+    .settings-btn {
+      margin-top: auto;
+      padding-bottom: 20px;
+    }
+  }
 
-.title {
-  font-size: 16px;
-  font-weight: 500;
-}
+  /* 展开状态样式 */
+  .expanded-mode {
+    padding: 20px;
 
-.collapse-btn {
-  padding: 6px;
-  border: none;
-}
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 16px;
 
-.new-chat-btn :deep(.el-button) {
-  width: 100%;
-  justify-content: center;
-  margin-bottom: 16px;
-  padding: 10px 16px;
-}
+      .title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+        flex: 1;
+      }
+    }
 
-.history-list {
-  flex: 1;
-  overflow: hidden;
-}
+    .full-width-btn {
+      width: 100%;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      border-radius: 24px;
+      font-weight: 500;
+    }
 
-.history-menu {
-  border-right: none;
-}
+    .history-list {
+      :deep(.el-menu) {
+        border: none;
 
-.history-menu :deep(.el-menu-item) {
-  height: 40px;
-  margin: 4px 0;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+        .el-menu-item {
+          height: 40px;
+          line-height: 40px;
+          margin: 4px 0;
+          border-radius: 8px;
+          padding-left: 16px !important;
+          transition: all 0.2s;
 
-.history-menu :deep(.el-menu-item:hover) {
-  background-color: #ededed;
-}
+          &:hover {
+            background: #f0f2f5;
+          }
 
-.history-menu :deep(.el-menu-item.is-active) {
-  background-color: #e6f0ff;
-}
+          &.is-active {
+            background: #e6f4ff;
+            color: #409EFF;
 
-.truncate-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+            .el-icon {
+              color: #409EFF;
+            }
+          }
+
+          .truncate {
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-left: 12px;
+          }
+        }
+      }
+    }
+  }
 }
 </style>

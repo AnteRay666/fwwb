@@ -1,6 +1,24 @@
 <template>
     <!-- 主容器 -->
     <div class="chat-container">
+        <div class="user-info-container">
+            <div v-if="userInfo.isLoggedIn" class="user-info-wrapper">
+                <el-button class="user-btn" @click="showUserInfoDialog">
+                    <el-icon>
+                        <User />
+                    </el-icon>
+                    <span class="username">{{ userInfo.username }}</span>
+                </el-button>
+            </div>
+            <div v-else class="auth-buttons">
+                <el-button type="primary" @click="showAuthModal = true">登录/注册</el-button>
+            </div>
+        </div>
+
+        <RegisterLoginPage v-model:visible="showAuthModal" @success="showAuthModal = false, handleLoginSuccess" />
+
+        <!-- 新增用户信息弹窗 -->
+        <UserInfoDialog v-model:visible="showUserInfo" :username="userInfo.username" @logout="handleLogout" />
         <!-- 消息展示区域 -->
         <div ref="messagesContainer" class="messages-wrapper">
             <div class="messages-scroller">
@@ -60,15 +78,74 @@
     </div>
 </template>
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
-
+import RegisterLoginPage from '../RegisterLoginPage/RegisterLoginPage.vue'
+import UserInfoDialog from '../RegisterLoginPage/UserInfoDialog.vue'
+import { User } from '@element-plus/icons-vue'
 const messages = ref([])
 const inputQuestion = ref('')
+
+const showAuthModal = ref(false)
 const isGenerating = ref(false)
 const messagesContainer = ref(null)
 const inputArea = ref(null)
 let abortController = null
+
+// 用户信息状态
+const userInfo = ref({
+    isLoggedIn: !!localStorage.getItem('authToken'),
+    username: localStorage.getItem('username') || '匿名用户'
+})
+// 监听localStorage变化（跨标签页同步）
+onMounted(() => {
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'authToken') {
+            userInfo.value.isLoggedIn = !!event.newValue
+            if (!event.newValue) handleLogout()
+        }
+        if (event.key === 'username') {
+            userInfo.value.username = event.newValue || '匿名用户'
+        }
+    })
+})
+
+// 检查本地存储状态
+const checkLoginStatus = () => {
+    const token = localStorage.getItem('authToken')
+    userInfo.value.isLoggedIn = !!token
+    userInfo.value.username = localStorage.getItem('username') || ''
+}
+
+// 显示用户信息弹窗
+const showUserInfo = ref(false)
+const showUserInfoDialog = () => {
+    showUserInfo.value = true
+}
+
+
+// 处理退出登录
+const handleLogout = () => {
+    localStorage.clear()
+    showUserInfo.value = false
+    // 添加登出后的消息提示
+    ElMessage.success('已退出登录')
+}
+
+// 登录成功处理
+const handleLoginSuccess = (data) => {
+    localStorage.setItem('authToken', data.token)
+    localStorage.setItem('username', data.username)
+
+    // 手动更新用户信息
+    userInfo.value = {
+        isLoggedIn: true,
+        username: data.username
+    }
+    console.log('登录成功，当前用户状态：', userInfo.value)
+    showAuthModal.value = false
+    ElMessage.success(`欢迎回来，${data.username}！`)
+}
 
 // 自动调整输入框高度
 const autoResize = () => {
@@ -146,12 +223,38 @@ const stopGeneration = () => {
         isGenerating.value = false
     }
 }
-
+window.addEventListener('storage', (event) => {
+    if (event.key === 'authToken') {
+        userInfo.value.isLoggedIn = !!event.newValue
+    }
+    if (event.key === 'username') {
+        userInfo.value.username = event.newValue || '匿名用户'
+    }
+})
+// 添加 watch 监听 localStorage 变化
+watch(
+    () => localStorage.getItem('authToken'),
+    () => checkLoginStatus()
+)
 // 自动滚动监听
 watch(messages, scrollToBottom, { deep: true })
 </script>
 
 <style scoped>
+/* 添加新样式 */
+.auth-button-container {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+}
+
+.login-btn {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+}
+
+
 .model-selector {
     right: -1rem;
     position: relative;
@@ -393,6 +496,11 @@ watch(messages, scrollToBottom, { deep: true })
             clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
         }
     }
+}
+
+.auth-buttons {
+    margin: 10px;
+
 }
 
 .status-bar {

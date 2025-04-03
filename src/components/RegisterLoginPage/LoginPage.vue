@@ -25,6 +25,7 @@
 <script>
 import axios from 'axios';
 import sha256 from 'crypto-js/sha256';
+import { local } from 'd3';
 
 export default {
     data() {
@@ -79,9 +80,14 @@ export default {
                 console.log(response.data.data.token);
                 // 处理登录成功
                 if (response.data && response.data.data.token) {
+                    localStorage.setItem('username', this.form.username);
                     localStorage.setItem('authToken', response.data.data.token);
 
-                    this.$emit('success');
+
+                    this.$emit('success', {
+                        token: response.data.data.token,
+                        username: this.form.username
+                    });
                     this.$message.success('登录成功！');
                 }
             } catch (error) {

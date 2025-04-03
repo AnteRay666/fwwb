@@ -8,6 +8,7 @@ import 'element-plus/dist/index.css';
 import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import hljs from 'highlight.js';
 import { marked } from 'marked';
+import { ElMessage } from 'element-plus'
 
 // 配置marked
 marked.setOptions({
@@ -18,7 +19,7 @@ marked.setOptions({
 
 // 创建Vue实例
 const app = createApp(App);
-
+app.config.globalProperties.$message = ElMessage
 // 注册Element Plus图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component);

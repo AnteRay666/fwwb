@@ -22,16 +22,6 @@
             </el-button>
           </el-tooltip>
         </div>
-        <div class="user-btn">
-          <el-tooltip content="登录注册" placement="right">
-            <el-button class="icon-btn" @click="startNewChat">
-              <el-icon>
-                <User />
-              </el-icon>
-            </el-button>
-          </el-tooltip>
-        </div>
-
         <div class="settings-btn">
           <el-tooltip content="设置" placement="right">
             <el-button class="icon-btn" @click="openSettings">
@@ -43,19 +33,14 @@
         </div>
       </div>
     </div>
-
     <!-- 展开状态 -->
     <div v-show="!isCollapsed" class="expanded-mode">
-
       <!-- 统一使用icon-btn样式 -->
       <el-button class="icon-btn collapse-btn" @click="$emit('toggle')">
         <el-icon>
           <Fold />
         </el-icon>
       </el-button>
-
-
-
       <div class="new-chat-btn">
         <el-button type="primary" round @click="startNewChat" class="full-width-btn">
           <el-icon class="mr-2">
@@ -68,7 +53,6 @@
       <div class="header">
         <span class="title">对话历史</span>
       </div>
-
       <div class="history-list">
         <el-scrollbar>
           <el-menu :default-active="activeIndex" @select="handleSelect">
@@ -81,27 +65,28 @@
           </el-menu>
         </el-scrollbar>
       </div>
-
-
     </div>
   </div>
 </template>
 
 <script setup>
 import { Fold, Expand, Plus, Setting, User, ChatDotRound } from '@element-plus/icons-vue'
-
+import { ref } from 'vue'
 defineProps({
   isCollapsed: Boolean
 })
+
 
 const chatHistory = [
   { id: '1', title: '关于项目架构的讨论' },
   { id: '2', title: '技术选型会议记录' },
   { id: '3', title: '用户反馈收集与分析' }
 ]
-
 const startNewChat = () => { }
 const openSettings = () => { }
+
+
+
 </script>
 
 <style scoped lang="scss">

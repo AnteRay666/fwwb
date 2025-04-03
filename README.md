@@ -43,6 +43,15 @@ MainPage
 一个按钮，点击会显示一个设置按钮。点击会显示一个设置按钮。
 一个按钮开启新对话。
 
+在用户登录后，将用户的用户名和后端返回的Token存储在LocalStorage,
+    localStorage.setItem('username', this.form.username);
+    localStorage.setItem('authToken', response.data.data.token);
+然后动态检测LocalStorage.getItem('authToken')是否为空。如果存在则隐藏登录注册按钮。
+UserInfoPage
+用户信息界面，显示用户的用户名。
+用户信息界面，显示用户的Token。
+
+
 设置界面：
 SettingsPage
 设置界面可以更改主题，一般是深色和浅色，默认跟随系统。

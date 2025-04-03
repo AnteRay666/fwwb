@@ -1,6 +1,7 @@
 <!-- RegisterPage.vue -->
 <template>
-    <el-form :model="form" :rules="rules" label-width="100px" class="auth-form" @submit.prevent="handleRegister">
+    <el-form ref="form" :model="form" :rules="rules" label-width="100px" class="auth-form"
+        @submit.prevent="handleRegister">
         <h2 class="form-title">用户注册</h2>
 
         <el-form-item label="用户名" prop="username">
@@ -29,6 +30,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+import sha256 from 'crypto-js/sha256';
 export default {
     data() {
         const validatePass = (rule, value, callback) => {
@@ -65,13 +68,48 @@ export default {
     },
     methods: {
         async handleRegister() {
-            this.isLoading = true
-            try {
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                this.$emit('success')
-            } finally {
-                this.isLoading = false
-            }
+            this.$refs.form.validate(async (valid) => {
+                if (!valid) return;
+
+                this.isLoading = true;
+                try {
+                    // SHA-256加密密码
+                    const hashedPassword = sha256(this.form.password).toString();
+
+                    // 构造请求参数
+                    const params = {
+                        username: this.form.username,
+                        passwordHash: hashedPassword
+                    };
+
+                    // 发送注册请求
+                    const response = await axios.post('http://114.55.146.90:8080/api/user/register', null, {
+                        params,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "Accept": "*/*",
+                        },
+                        timeout: 10000
+                    });
+
+                    // 处理响应
+                    if (response.status === 200) {
+                        this.$message.success('注册成功');
+                        this.$emit('success');
+                    }
+                } catch (error) {
+                    let errorMessage = '注册失败，请稍后重试';
+                    if (error.response) {
+                        // 提取后端返回的错误信息
+                        errorMessage = error.response.data.message || error.response.data;
+                    } else if (error.request) {
+                        errorMessage = '无法连接到服务器';
+                    }
+                    this.$message.error(errorMessage);
+                } finally {
+                    this.isLoading = false;
+                }
+            });
         }
     }
 }

@@ -22,6 +22,16 @@
             </el-button>
           </el-tooltip>
         </div>
+        <div class="user-btn">
+          <el-tooltip content="登录注册" placement="right">
+            <el-button class="icon-btn" @click="startNewChat">
+              <el-icon>
+                <User />
+              </el-icon>
+            </el-button>
+          </el-tooltip>
+        </div>
+
         <div class="settings-btn">
           <el-tooltip content="设置" placement="right">
             <el-button class="icon-btn" @click="openSettings">
@@ -78,7 +88,7 @@
 </template>
 
 <script setup>
-import { Fold, Expand, Plus, Setting, ChatDotRound } from '@element-plus/icons-vue'
+import { Fold, Expand, Plus, Setting, User, ChatDotRound } from '@element-plus/icons-vue'
 
 defineProps({
   isCollapsed: Boolean
@@ -112,6 +122,7 @@ const openSettings = () => { }
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 10px auto;
     transition: all 0.2s;
 
     &:hover {
@@ -148,9 +159,14 @@ const openSettings = () => { }
       margin-bottom: auto;
     }
 
+    .user-btn {
+      margin-top: auto;
+      padding-bottom: 40px;
+    }
+
     .settings-btn {
       margin-top: auto;
-      padding-bottom: 20px;
+      padding-bottom: 60px;
     }
   }
 

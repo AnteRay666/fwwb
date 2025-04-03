@@ -72,18 +72,19 @@ const handleMenuItemClick = (menuItem) => {
     flex: 1;
     display: flex;
     overflow: hidden;
+    -ms-overflow-style: none;
 }
 
 .sidebar {
     background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-right: 1px solid #2a3f54;
+    // border-right: 1px solid #2a3f54;
     min-width: 64px;
 }
 
 .content {
     flex: 1;
-    padding: 24px;
+    padding: 0px;
     background: #ffffff;
     border-left: 1px solid #e4e7ed;
     overflow-y: auto;

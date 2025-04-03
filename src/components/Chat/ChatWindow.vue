@@ -1,45 +1,64 @@
 <template>
+    <!-- 主容器 -->
     <div class="chat-container">
         <!-- 消息展示区域 -->
-        <div ref="messagesContainer" class="messages-container">
-            <div v-for="(msg, index) in messages" :key="index" class="message-row" :class="msg.role">
-                <div class="message-bubble">
-                    <div class="message-content">
-                        <MarkdownRenderer v-if="msg.role === 'assistant'" :content="msg.content" />
-                        <template v-else>{{ msg.content }}</template>
+        <div ref="messagesContainer" class="messages-wrapper">
+            <div class="messages-scroller">
+                <div v-for="(msg, index) in messages" :key="index" class="message-item">
+                    <div class="avatar" :class="msg.role"></div>
+                    <div class="message-card" :class="msg.role">
+                        <div class="message-content">
+                            <MarkdownRenderer v-if="msg.role === 'assistant'" :content="msg.content" />
+                            <template v-else>{{ msg.content }}</template>
+                        </div>
+                        <div v-if="isGenerating && index === messages.length - 1" class="typing-indicator">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
                     </div>
-                    <div v-if="isGenerating && index === messages.length - 1" class="cursor-animation"></div>
+                </div>
+                <div v-if="isGenerating && messages.length === 0" class="loading-container">
+                    <svg class="loading-spinner" viewBox="0 0 50 50">
+                        <circle cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
                 </div>
             </div>
-            <div v-if="isGenerating && messages.length === 0" class="loading-indicator">
-                <div class="wave-dots">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
+        </div>
+        <div class="input-container-fixed">
+            <!-- 输入区域 -->
+            <div class="input-wrapper">
+                <div class="model-selector">
+                    <select v-model="selectedModel" class="model-select">
+                        <option value="deepseek-r1">DeepSeek-R1</option>
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="qwen-max">Qwen-Max</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24">
+                        <path d="M7 10l5 5 5-5H7z" />
+                    </svg>
                 </div>
+                <form @submit.prevent="handleSubmit" class="input-form">
+                    <textarea ref="inputArea" v-model="inputQuestion" :disabled="isGenerating" placeholder="请输入您的问题..."
+                        rows="1" @input="autoResize" class="input-field" />
+
+                    <button type="submit" class="send-button" :class="{ generating: isGenerating }">
+                        <svg v-if="!isGenerating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                            height="24">
+                            <path fill="none" d="M0 0h24v24H0z" />
+                            <path
+                                d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-6.636 2.812-.664-1.886c-.15-.529-.01-.818.356-.818l19.087-6.364c.367-.124.634.223.357.618l-5.454 19.086c-.278.974-.962 1.35-1.686 1.074L1 14.293l-1.313-3.938c-.24-.717.01-1.272.514-1.272h19.086c.504 0 .754.555.514 1.272L1.946 9.315z" />
+                        </svg>
+                        <div v-else class="stop-indicator"></div>
+                    </button>
+                </form>
+                <div class="status-bar">By ante</div>
             </div>
         </div>
 
-        <!-- 输入区域 -->
-        <div class="input-container">
-            <form @submit.prevent="handleSubmit">
-                <div class="input-wrapper">
-                    <textarea ref="inputArea" v-model="inputQuestion" :disabled="isGenerating" placeholder="有什么可以帮您？"
-                        rows="1" @input="autoResize" @keydown.enter.exact.prevent="handleSubmit" />
-                    <button type="submit" class="submit-btn" :class="{ 'stop-generation': isGenerating }"
-                        :disabled="!inputQuestion.trim()">
-                        <svg v-if="!isGenerating" class="icon" viewBox="0 0 24 24">
-                            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
-                        </svg>
-                        <div v-else class="stop-icon"></div>
-                    </button>
-                </div>
-            </form>
-            <div class="footer-note">DeepSeek-R1</div>
-        </div>
+
     </div>
 </template>
-
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
@@ -133,173 +152,152 @@ watch(messages, scrollToBottom, { deep: true })
 </script>
 
 <style scoped>
+.model-selector {
+    right: -1rem;
+    position: relative;
+    margin-bottom: 1rem;
+    width: 100%;
+    max-width: 160px;
+}
+
+.model-select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    background: #F8F9FA;
+    font-size: 0.875rem;
+    appearance: none;
+    transition: all 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #6366F1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+}
+
+.select-arrow {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: #64748B;
+}
+
+/* 调整输入区域布局 */
+.input-form {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+
+    align-items: end;
+}
+
+.input-field {
+    grid-column: 2 / 3;
+    margin-bottom: 0;
+}
+
+.send-button {
+    grid-column: 3 / 4;
+    margin-left: 0;
+}
+
+
+
 .chat-container {
+    position: relative;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    background: #f7f7f8;
 }
 
-.messages-container {
+.messages-wrapper {
     flex: 1;
-    overflow-y: auto;
-    padding: 20px 12% 40px;
-    scroll-behavior: smooth;
+    padding: 2rem;
+    overflow: hidden;
 }
 
-.message-row {
-    margin: 20px 0;
+.messages-scroller {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 1rem;
+
+    /* 隐藏滚动条 */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
+
+    &::-webkit-scrollbar {
+        display: none;
+        /* Chrome/Safari */
+    }
+
+}
+
+.message-item {
+    display: flex;
+    margin: 1.5rem 0;
+    gap: 1rem;
+
+    &:first-child {
+        margin-top: 0;
+    }
+}
+
+.avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #6366F1;
 
     &.user {
-        display: flex;
-        justify-content: flex-end;
+        background: linear-gradient(135deg, #FF6B6B 0%, #EA580C 100%);
+    }
+}
 
-        .message-bubble {
-            background: #e6f4ff;
-            border-color: #cde0ff;
-        }
+.message-card {
+    max-width: 75%;
+    border-radius: 12px;
+    padding: 1.25rem;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+
+    &.user {
+        margin-left: auto;
+        background: linear-gradient(135deg, #BFDBFE 0%, #93C5FD 100%);
+        color: #1E293B;
     }
 
     &.assistant {
-        .message-bubble {
-            background: white;
-            border-color: #e5e7eb;
-        }
-    }
-}
-
-.message-bubble {
-    max-width: 800px;
-    border: 1px solid;
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    position: relative;
-    line-height: 1.6;
-    font-size: 15px;
-
-    .cursor-animation {
-        display: inline-block;
-        width: 8px;
-        height: 18px;
-        background: #666;
-        margin-left: 4px;
-        animation: blink 1s step-end infinite;
-    }
-}
-
-.input-container {
-    background: white;
-    border-top: 1px solid #e5e5e5;
-    padding: 20px 0;
-    position: sticky;
-    bottom: 0;
-
-    .input-wrapper {
-        max-width: 800px;
-        margin: 0 auto;
-        position: relative;
-        padding: 0 12%;
-    }
-
-    textarea {
-        width: 100%;
-        padding: 12px 48px 12px 16px;
-        border: 1px solid #d9d9e3;
-        border-radius: 12px;
-        resize: none;
-        font-size: 15px;
-        line-height: 1.6;
         background: white;
-        transition: all 0.2s;
-
-        &:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-            border-color: #40a9ff;
-        }
-
-        &:disabled {
-            background: #f7f7f8;
-        }
+        color: #334155;
     }
 }
 
-.submit-btn {
-    position: absolute;
-    right: 16px;
-    bottom: 12px;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 8px;
-    background: #1677ff;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-        background: #4096ff;
-    }
-
-    &:disabled {
-        background: #d9d9e3;
-        cursor: not-allowed;
-    }
-
-    &.stop-generation {
-        background: #ff4d4f;
-
-        &:hover {
-            background: #ff7875;
-        }
-    }
-
-    .icon {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-    }
-
-    .stop-icon {
-        width: 16px;
-        height: 16px;
-        margin: 8px;
-        background: white;
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    }
-}
-
-.footer-note {
-    text-align: center;
-    color: #999;
-    font-size: 12px;
-    margin-top: 12px;
-}
-
-@keyframes blink {
-
-    0%,
-    100% {
-        opacity: 1
-    }
-
-    50% {
-        opacity: 0
-    }
-}
-
-.wave-dots {
+.typing-indicator {
     display: flex;
-    gap: 8px;
-    justify-content: center;
+    gap: 4px;
+    margin-top: 0.5rem;
 
     .dot {
         width: 8px;
         height: 8px;
-        background: #1677ff;
+        background: #64748b;
         border-radius: 50%;
-        animation: wave 1.2s ease-in-out infinite;
+        animation: bounce 1.4s infinite ease-in-out;
+
+        &:nth-child(1) {
+            animation-delay: 0s
+        }
 
         &:nth-child(2) {
             animation-delay: 0.2s
@@ -311,16 +309,121 @@ watch(messages, scrollToBottom, { deep: true })
     }
 }
 
-@keyframes wave {
+.input-container-fixed {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #E5E7EB;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
+    z-index: 10;
+}
 
-    0%,
-    60%,
-    100% {
-        transform: translateY(0)
+.input-wrapper {
+    padding: 1.5rem 15%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.input-form {
+    position: relative;
+}
+
+.input-field {
+    width: 100%;
+    padding: 1rem 3rem 1rem 1.25rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    background: #F8F9FA;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:focus {
+        outline: none;
+        border-color: #6366F1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
     }
 
-    30% {
-        transform: translateY(-10px)
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.send-button {
+    position: absolute;
+    right: -3.5rem;
+    bottom: 0.5rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background: #6366F1;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+        fill: white;
+        width: 20px;
+        height: 20px;
+        transition: transform 0.2s ease;
+    }
+
+    &:hover:not(:disabled) {
+        background: #4F46E5;
+    }
+
+    &.generating {
+        background: #DC2626;
+
+        &:hover {
+            background: #B91C1C;
+        }
+
+        .stop-indicator {
+            width: 24px;
+            height: 24px;
+            background: white;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        }
+    }
+}
+
+.status-bar {
+    margin-top: 0.75rem;
+    text-align: center;
+    color: #64748B;
+    font-size: 0.875rem;
+}
+
+@keyframes bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <el-form :model="form" :rules="rules" label-width="80px" class="auth-form" @submit.prevent="handleLogin">
+    <el-form ref="form" :model="form" :rules="rules" label-width="80px" class="auth-form" @submit.prevent="handleLogin">
         <h2 class="form-title">用户登录</h2>
 
         <el-form-item label="用户名" prop="username">
@@ -23,6 +23,9 @@
 </template>
 
 <script>
+import axios from 'axios';
+import sha256 from 'crypto-js/sha256';
+
 export default {
     data() {
         return {
@@ -44,11 +47,65 @@ export default {
     methods: {
         async handleLogin() {
             try {
-                this.isLoading = true
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                this.$emit('success')
+                // 表单验证
+                const valid = await this.$refs.form.validate();
+                if (!valid) return;
+
+                this.isLoading = true;
+
+                // 生成密码哈希
+                const passwordHash = sha256(this.form.password).toString();
+                console.log("1");
+                console.log(passwordHash);
+                // 发送登录请求
+                const response = await axios.post(
+                    'http://114.55.146.90:8080/api/user/login',
+                    {
+                        username: this.form.username,
+                        passwordHash: passwordHash
+
+                    },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': '*/*',
+                            // 注意：浏览器可能会自动处理Connection和Host头
+                        },
+                        timeout: 5000
+                    }
+                );
+                console.log("23");
+                // console.log("完整响应:", response);
+                console.log(response.data.data.token);
+                // 处理登录成功
+                if (response.data && response.data.data.token) {
+                    localStorage.setItem('authToken', response.data.data.token);
+
+                    this.$emit('success');
+                    this.$message.success('登录成功！');
+                }
+            } catch (error) {
+                let errorMessage = '登录失败，请重试';
+                if (error.response) {
+                    switch (error.response.status) {
+                        case 400:
+                            errorMessage = '请求参数错误：' +
+                                (error.response.data.message || '请检查输入格式');
+                            break;
+                        case 401:
+                            errorMessage = '用户名或密码错误';
+                            break;
+                        case 500:
+                            errorMessage = '服务器内部错误，请稍后再试';
+                            break;
+                    }
+                } else if (error.request) {
+                    errorMessage = '无法连接到服务器，请检查网络连接';
+                }
+                this.$message.error(errorMessage);
+
             } finally {
-                this.isLoading = false
+                this.isLoading = false;
             }
         }
     }

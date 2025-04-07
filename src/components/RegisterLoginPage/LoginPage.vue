@@ -79,16 +79,21 @@ export default {
                 // console.log("完整响应:", response);
                 console.log(response.data.data.token);
                 // 处理登录成功
-                if (response.data && response.data.data.token) {
-                    localStorage.setItem('username', this.form.username);
-                    localStorage.setItem('authToken', response.data.data.token);
 
-
-                    this.$emit('success', {
+                if (response.data?.data?.token) {
+                    // 确保payload结构正确
+                    localStorage.setItem('authToken', response.data.data.token)
+                    localStorage.setItem('username', this.form.username)
+                    const payload = {
                         token: response.data.data.token,
                         username: this.form.username
-                    });
-                    this.$message.success('登录成功！');
+                    }
+
+                    // 添加调试日志
+                    console.log('[LoginPage] 触发success事件', payload)
+
+                    this.$emit('success', payload)  // 确保触发带参数的事件
+                    this.$message.success('登录成功！')
                 }
             } catch (error) {
                 let errorMessage = '登录失败，请重试';

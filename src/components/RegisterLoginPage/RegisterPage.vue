@@ -94,8 +94,13 @@ export default {
 
                     // 处理响应
                     if (response.status === 200) {
-                        this.$message.success('注册成功');
-                        this.$emit('success');
+                        this.$emit('success', {  // 传递注册成功数据
+                            username: this.form.username,
+                            password: this.form.password
+                        })
+
+                        // 清空注册表单
+                        this.$refs.form.resetFields()
                     }
                 } catch (error) {
                     let errorMessage = '注册失败，请稍后重试';

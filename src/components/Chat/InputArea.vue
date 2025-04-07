@@ -1,74 +1,100 @@
-<!-- ChatWindow.vue -->
+<!-- InputArea.vue -->
 <template>
-    <div class="chat-container">
-        <UserInfo />
-        <div ref="messagesContainer" class="messages-wrapper">
-            <div class="messages-scroller">
-                <MessageItem v-for="(msg, index) in messages" :key="msg.tempId || msg.id" :message="msg"
-                    :is-generating="isGenerating && index === messages.length - 1"
-                    :is-last="index === messages.length - 1" />
+    <div class="input-container-fixed">
+        <div class="input-wrapper">
+            <div class="model-selector">
+                <select v-model="selectedModel" class="model-select">
+                    <option value="gpt-4o">gpt-4o</option>
+                    <option value="deepseek-r1">DeepSeek-R1</option>
+
+                    <option value="qwen-max">Qwen-Max</option>
+                </select>
+                <svg class="select-arrow" viewBox="0 0 24 24">
+                    <path d="M7 10l5 5 5-5H7z" />
+                </svg>
             </div>
+            <div class="input-form">
+                <textarea ref="inputArea" v-model="inputContent" :disabled="isGenerating" placeholder="请输入您的问题..."
+                    rows="1" class="input-field" @keydown.enter.exact.prevent="handleSubmit" />
+                <button type="button" class="send-button" :disabled="!canSubmit" @click="handleSubmit">
+                    <svg v-if="!isGenerating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                        height="24">
+                        <path fill="none" d="M0 0h24v24H0z" />
+                        <path
+                            d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-6.636 2.812-.664-1.886c-.15-.529-.01-.818.356-.818l19.087-6.364c.367-.124.634.223.357.618l-5.454 19.086c-.278.974-.962 1.35-1.686 1.074L1 14.293l-1.313-3.938c-.24-.717.01-1.272.514-1.272h19.086c.504 0 .754.555.514 1.272L1.946 9.315z" />
+                    </svg>
+                    <svg v-else class="stop-indicator" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                        height="24">
+                        <!-- 外框脉冲动画 -->
+                        <path class="stop-outer" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20" fill="none"
+                            stroke="currentColor" stroke-width="1.5">
+                            <animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.5s" repeatCount="indefinite" />
+                        </path>
+
+                        <!-- 中心停止符号 -->
+                        <path class="stop-inner" d="M8 8h8v8H8z" fill="currentColor" stroke="currentColor"
+                            stroke-width="0.5">
+                            <!-- 轻微缩放动画 -->
+                            <animate attributeName="transform" type="translate" values="-0.5 -0.5; 0 0; -0.5 -0.5"
+                                dur="0.8s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="status-bar">By ante | 当前模型: {{ modelDisplayName }}</div>
+
         </div>
-        <InputArea :is-generating="isGenerating" @submit="handleSubmit" />
     </div>
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
-import UserInfo from './UserInfo.vue'
-import InputArea from './InputArea.vue'
-import MessageItem from './MessageItem.vue'
-import { useChatMessages } from '../composables/useChatMessages'
+import { ref, computed } from 'vue'
+const emit = defineEmits(['submit'])
+const inputContent = ref('')
+const selectedModel = ref('gpt-4o')
+const isGenerating = ref(false)
+const props = defineProps({
+    isGenerating: Boolean
+})
 
-
-const {
-    messages,
-    isGenerating,
-    handleSubmit: submitToAI,
-    stopGeneration
-} = useChatMessages()
-
-
-// 处理用户提交
-const handleSubmit = async ({ content, model }) => {
-    try {
-        await submitToAI({ content, model })
-    } catch (error) {
-        ElMessage.error(error.message)
-    }
+// 模型显示名称映射
+const modelNames = {
+    'deepseek-r1': 'DeepSeek-R1',
+    'gpt-4o': 'GPT-4o',
+    'qwen-max': 'Qwen-Max'
 }
-const messagesContainer = ref(null)
-const scrollToBottom = () => {
-    if (messagesContainer.value) {
-        const container = messagesContainer.value
-        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
-        if (isNearBottom) {
-            container.scrollTo({
-                top: container.scrollHeight,
-                behavior: 'smooth'
-            })
-        }
-    }
+
+// 计算属性
+const modelDisplayName = computed(() => modelNames[selectedModel.value])
+const canSubmit = computed(() =>
+    !isGenerating.value && inputContent.value.trim().length > 0
+)
+
+
+// 提交处理
+const handleSubmit = () => {
+    const content = inputContent.value.trim()
+    if (!content || props.isGenerating) return
+    // 打印调试信息
+    console.log('提交内容:', {
+        content: inputContent.value.trim(),
+        model: selectedModel.value
+    })
+    emit('submit', {
+        content: inputContent.value.trim(),
+        model: selectedModel.value
+    })
+    inputContent.value = ''
+
+    // // isGenerating.value = true
+    // setTimeout(() => {
+    //     isGenerating.value = false
+    //     inputContent.value = ''
+    // }, 1000)
 }
-watch(() => messages.value, () => {
-    nextTick(scrollToBottom)
-}, { deep: true })
 
 </script>
-<style scoped>
-.messages-wrapper {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-}
 
-.messages-scroller {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-</style>
 <style>
 /* 添加新样式 */
 .auth-button-container {

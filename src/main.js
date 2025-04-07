@@ -9,6 +9,11 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue';
 import hljs from 'highlight.js';
 import { marked } from 'marked';
 import { ElMessage } from 'element-plus'
+import { createPinia } from 'pinia'
+import 'katex/dist/katex.min.css'
+import 'highlight.js/styles/github.css'
+import 'highlight.js/styles/github-dark.css'
+
 
 // 配置marked
 marked.setOptions({
@@ -16,7 +21,7 @@ marked.setOptions({
         return hljs.highlightAuto(code).value;
     }
 });
-
+const pinia = createPinia()
 // 创建Vue实例
 const app = createApp(App);
 app.config.globalProperties.$message = ElMessage
@@ -28,6 +33,6 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 // 全局配置
 app.use(router);
 app.use(ElementPlus);
-
+app.use(pinia);
 // 挂载应用
 app.mount('#app');

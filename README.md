@@ -58,3 +58,39 @@ SettingsPage
 设置界面可以更改语言，一般是中文和英文，默认跟随系统。
 设置界面可以注销用户。
 
+
+交互逻辑，包括<script></script>和<style></style>部分的逻辑都在单组件内实现。目前不考虑拆分。使用组合式API
+按照下列步骤进行设计。
+<!-- 1. Chatwindow.vue作为主界面。包含2个子组件，InputArea.vue和一个MessageShow.vue.
+2. InputArea.vue
+作为输入框，包含一个输入框，一个选择模型的下拉框，一个发送按钮。
+处理逻辑，包括用户的输入，模型的选择，发送按钮的事件。
+需要将用户的输入同步渲染到
+3. MessageShow.vue
+作为消息显示框.MessageShow.vue的内容又交由一个MarkdownRender.vue进行渲染，它支持大模型的输出内容的渲染。
+4. MarkdownRender.vue
+MarkdownRender.vue是一个组件，它的功能是：
+渲染Markdown语法的文本。
+渲染LaTeX语法的文本。
+渲染代码块。 -->
+重新设计 2025年4月5日13:52:59
+直接一整个Chatwindow.vue。实现用户的输入和大模型的输出。
+
+仅渲染部分交由MarkdownRender.vue处理该部分暂不实现。
+同时，script的内容需要分离出来，命名为ChatWindow.js。
+ChatWindow.js调用InputArea.js和MessageShow.js
+InputArea.js负责用户的输入和发送按钮的事件。
+MessageShow.js负责消息的显示。
+
+css的内容也需要分离出来，命名为Chatwindow.css.
+调用InputArea.css和MessageShow.css
+
+
+
+
+按照下列步骤进行再重构。
+1. 先搭好输入框和消息展示框，这个部分将和市面上的大模型一致。该步骤能够正确的将用户的输入展示在消息展示框中。
+
+2. 该步骤将实现用户输入内容提交到大模型，并获取输出结果。
+
+3. 该步骤将实现数据的存储和获取历史记录。

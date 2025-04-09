@@ -85,12 +85,6 @@ const handleSubmit = () => {
         model: selectedModel.value
     })
     inputContent.value = ''
-
-    // // isGenerating.value = true
-    // setTimeout(() => {
-    //     isGenerating.value = false
-    //     inputContent.value = ''
-    // }, 1000)
 }
 
 </script>

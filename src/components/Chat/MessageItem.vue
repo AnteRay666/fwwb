@@ -10,7 +10,7 @@
             </el-icon>
         </div>
 
-        < <div class="message-content" :class="message.role">
+        <div class="message-content" :class="message.role">
             <!-- 添加加载状态 -->
             <div v-if="!message.content && isGenerating" class="loading-indicator">
                 <div class="loading-dot"></div>
@@ -24,7 +24,7 @@
                 <span v-if="message.model" class="model-tag">{{ modelNames[message.model] }}</span>
                 <span class="timestamp">{{ formatTime(message.timestamp) }}</span>
             </div>
-    </div>
+        </div>
     </div>
 </template>
 

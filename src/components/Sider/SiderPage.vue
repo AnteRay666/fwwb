@@ -53,16 +53,65 @@
       <div class="header">
         <span class="title">对话历史</span>
       </div>
+
       <div class="history-list">
         <el-scrollbar>
-          <el-menu :default-active="activeIndex" @select="handleSelect">
-            <el-menu-item v-for="item in chatHistory" :key="item.id" :index="item.id" class="history-item">
-              <el-icon>
-                <ChatDotRound />
-              </el-icon>
-              <span class="truncate">{{ item.title }}</span>
-            </el-menu-item>
+          <el-menu>
+            <!-- 今天 -->
+            <template v-if="chatStore.categorizedHistory.today.length">
+              <el-menu-item-group title="今天">
+                <el-menu-item v-for="item in chatStore.categorizedHistory.today" :key="item.id" :index="item.id"
+                  class="history-item" @click="handleSelect(item)">
+                  <el-icon>
+                    <ChatDotRound />
+                  </el-icon>
+                  <span class="truncate">{{ item.title }}</span>
+                </el-menu-item>
+              </el-menu-item-group>
+            </template>
+
+            <!-- 昨天 -->
+            <template v-if="chatStore.categorizedHistory.yesterday.length">
+              <el-menu-item-group title="昨天">
+                <el-menu-item v-for="item in chatStore.categorizedHistory.yesterday" :key="item.id" :index="item.id"
+                  class="history-item" @click="handleSelect(item)">
+                  <el-icon>
+                    <ChatDotRound />
+                  </el-icon>
+                  <span class="truncate">{{ item.title }}</span>
+                </el-menu-item>
+              </el-menu-item-group>
+            </template>
+
+            <!-- 最近7天 -->
+            <template v-if="chatStore.categorizedHistory.last7Days.length">
+              <el-menu-item-group title="最近7天">
+                <el-menu-item v-for="item in chatStore.categorizedHistory.last7Days" :key="item.id" :index="item.id"
+                  class="history-item" @click="handleSelect(item)">
+                  <el-icon>
+                    <ChatDotRound />
+                  </el-icon>
+                  <span class="truncate">{{ item.title }}</span>
+                </el-menu-item>
+              </el-menu-item-group>
+            </template>
+
+            <!-- 最近30天 -->
+            <template v-if="chatStore.categorizedHistory.last30Days.length">
+              <el-menu-item-group title="最近30天">
+                <el-menu-item v-for="item in chatStore.categorizedHistory.last30Days" :key="item.id" :index="item.id"
+                  class="history-item" @click="handleSelect(item)">
+                  <el-icon>
+                    <ChatDotRound />
+                  </el-icon>
+                  <span class="truncate">{{ item.title }}</span>
+                </el-menu-item>
+              </el-menu-item-group>
+            </template>
+
+            <el-empty v-if="!hasHistory" description="暂无历史记录" :image-size="100" />
           </el-menu>
+
         </el-scrollbar>
       </div>
     </div>
@@ -71,19 +120,55 @@
 
 <script setup>
 import { Fold, Expand, Plus, Setting, User, ChatDotRound } from '@element-plus/icons-vue'
-import { ref } from 'vue'
+import { onMounted, computed, ref } from 'vue'
+import { useChatStore } from '@/stores/chat'
+import { ElMessage } from 'element-plus'
 defineProps({
   isCollapsed: Boolean
 })
+const conversationHistory = ref()
+const chatStore = useChatStore()
+
+const handleSelect = async (item) => {
+  try {
+    // 获取并转换历史记录
+    const history = await chatStore.getconversationList(item.id)
+    console.log(history)
+    // 注入到当前会话
+    // messages.value = history
+    conversationHistory.value = history
+
+    // 持久化当前会话
+    localStorage.setItem('currentConversation', JSON.stringify(history))
+    console.log(localStorage.getItem('currentConversation'))
+  } catch (error) {
+    ElMessage.error('加载历史对话失败: ' + error.message)
+  }
+}
+
+const hasHistory = computed(() => {
+  const hasData = Object.values(chatStore.categorizedHistory).some(cat => cat.length > 0)
+  console.log('是否有历史数据:', hasData)
+  return hasData
+})
+
+onMounted(async () => {
+  console.log('组件挂载，开始获取历史记录...')
+  try {
+    await chatStore.fetchChatHistory()
+    console.log('获取到的分类数据:', chatStore.categorizedHistory)
+  } catch (error) {
+    console.error('获取历史记录失败:', error)
+  }
+})
+const startNewChat = () => {
 
 
-const chatHistory = [
-  { id: '1', title: '关于项目架构的讨论' },
-  { id: '2', title: '技术选型会议记录' },
-  { id: '3', title: '用户反馈收集与分析' }
-]
-const startNewChat = () => { }
-const openSettings = () => { }
+}
+const openSettings = () => {
+
+
+}
 
 
 
@@ -217,5 +302,22 @@ const openSettings = () => { }
       }
     }
   }
+}
+</style>
+
+<style>
+/* 添加以下样式 */
+.history-menu {
+  border-right: none !important;
+}
+
+.history-menu .el-menu-item {
+  height: 48px;
+  line-height: 48px;
+}
+
+.history-list {
+  height: calc(100vh - 160px);
+  /* 根据实际布局调整 */
 }
 </style>

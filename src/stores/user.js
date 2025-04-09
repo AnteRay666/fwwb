@@ -7,6 +7,7 @@ export const useUserStore = defineStore('user', {
         isLoggedIn: !!localStorage.getItem('authToken'),
         username: localStorage.getItem('username') || '匿名用户',
         AuthToken: localStorage.getItem('authToken') || '',
+        currentconversationid: localStorage.getItem('ccid') || null,
         showAuthModal: false,  // 登录弹窗状态
         showUserInfo: false    // 用户信息弹窗状态
     }),

@@ -26,7 +26,7 @@ const {
     messages,
     isGenerating,
     handleSubmit: submitToAI,
-    stopGeneration
+    stopGeneration, handleError,
 } = useChatMessages()
 
 
@@ -56,7 +56,13 @@ watch(() => messages.value, () => {
 }, { deep: true })
 
 </script>
+
 <style scoped>
+.chat-container {
+
+    flex: 0%;
+}
+
 .messages-wrapper {
     flex: 1;
     overflow-y: auto;

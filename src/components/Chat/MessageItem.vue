@@ -9,7 +9,6 @@
                 <User />
             </el-icon>
         </div>
-
         <div class="message-content" :class="message.role">
             <!-- 添加加载状态 -->
             <div v-if="!message.content && isGenerating" class="loading-indicator">
@@ -22,16 +21,19 @@
 
             <div class="message-meta">
                 <span v-if="message.model" class="model-tag">{{ modelNames[message.model] }}</span>
-                <span class="timestamp">{{ formatTime(message.timestamp) }}</span>
+                <!-- <span class="timestamp">{{ formatTime(message.timestamp) }}</span> -->
             </div>
         </div>
+
     </div>
 </template>
 
 <script setup>
-// import { computed } from 'vue'
+import { computed } from 'vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import { User, Cpu } from '@element-plus/icons-vue'
+import { useChatMessages } from '../composables/useChatMessages'
+import { watch } from 'vue'
 const props = defineProps({
     message: Object,
     isGenerating: Boolean,
@@ -42,12 +44,15 @@ const modelNames = {
     'deepseek-r1': 'DeepSeek',
     'qwen-max': 'Qwen'
 }
+const { conversationHistory } = useChatMessages()
 
-const formatTime = (timestamp) => {
-    const date = new Date(timestamp)
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-}
-
+const orderedMessages = computed(() => {
+    return [...props.messages].sort((a, b) => a.timestamp - b.timestamp)
+})
+watch(conversationHistory, (newVal) => {
+    localStorage.setItem('currentConversation', JSON.stringify(newVal))
+    window.location.reload()
+}, { deep: true })
 
 </script>
 <style scoped>

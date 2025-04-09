@@ -70,8 +70,6 @@ export function useChatMessages() {
                 signal: abortController.signal,
 
                 onDownloadProgress: (progressEvent) => {
-                    console.log("requestBody:")
-                    console.log(requestBody)
                     const xhr = progressEvent.event.target;
                     const tracking = pendingMessages.get(tempId);
 
@@ -89,7 +87,6 @@ export function useChatMessages() {
                 }
 
             })
-            console.log(requestBody)
         } catch (error) {
             console.log("1!")
             handleError(error, tempId)// 改为传递tempId
@@ -144,7 +141,30 @@ export function useChatMessages() {
         )
         // console.log('更新内容:', { tempId, content })
     }
+    const loadHistory = () => {
+        const savedHistory = localStorage.getItem('currentConversation');
 
+        // 清空时使用 splice 保持响应性
+        messages.value.splice(0, messages.value.length);
+        conversationHistory.value.splice(0, conversationHistory.value.length);
+
+        if (savedHistory && savedHistory !== 'null') {
+            try {
+                const parsed = JSON.parse(savedHistory);
+                // 使用 push 方法保持响应式
+                parsed.forEach(msg => {
+                    messages.value.push(msg);
+                    conversationHistory.value.push(msg);
+                    if (!msg.timestamp) {
+                        msg.timestamp = Date.now() // 根据实际情况调整
+                    }
+                });
+            } catch (e) {
+                console.error('解析失败:', e);
+            }
+        }
+
+    }
     // 更新最终状态
     const updateFinalMessage = (tempId, data) => {
         const index = messages.value.findIndex(m => m.tempId === tempId)
@@ -168,7 +188,8 @@ export function useChatMessages() {
         }
 
         conversationHistory.value.push(assistantResponse)
-        console.log(conversationHistory)
+        localStorage.setItem('currentConversation', JSON.stringify(conversationHistory.value))
+        console.log(localStorage.getItem('currentConversation'))
     }
     // console.log('解析后的数据:', data)
     // 错误处理
@@ -191,6 +212,8 @@ export function useChatMessages() {
             abortController = null
         }
     }
+    // console.log(messages)
+    loadHistory()
     return {
         messages,
         inputQuestion,
@@ -199,6 +222,7 @@ export function useChatMessages() {
         processStreamData,
         handleSubmit,
         stopGeneration,
-        handleError
+        handleError,
+        loadHistory
     }
 }

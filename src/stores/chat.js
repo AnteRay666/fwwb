@@ -108,18 +108,18 @@ export const useChatStore = defineStore('chat', () => {
             console.log('原始响应数据:', response.data.data)
             console.log("1")
             if (response.data.code === 1) {
+
                 // 转换数据结构
                 const converted = response.data.data.conversationList.map(item => ({
                     role: 'user',
                     content: item.question,
-                    timestamp: new Date().getTime() // 根据实际返回时间字段调整
                 })).concat(response.data.data.conversationList.map(item => ({
                     role: 'assistant',
                     content: item.recordContent,
-                    timestamp: new Date().getTime() + 1000 // 假设AI回复稍晚
                 })))
                 conversationList.value = converted
-                console.log('转换后的对话列表:', converted)
+                localStorage.setItem('ccid', response.data.data.id)
+                // console.log('转换后的对话列表:', converted)
                 return converted
             }
 

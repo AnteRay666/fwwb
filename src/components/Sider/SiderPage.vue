@@ -122,13 +122,14 @@
 import { Fold, Expand, Plus, Setting, User, ChatDotRound } from '@element-plus/icons-vue'
 import { onMounted, computed, ref } from 'vue'
 import { useChatStore } from '@/stores/chat'
+import { useChatMessages } from '../composables/useChatMessages'
 import { ElMessage } from 'element-plus'
 defineProps({
   isCollapsed: Boolean
 })
 const conversationHistory = ref()
 const chatStore = useChatStore()
-
+const { loadHistory } = useChatMessages()
 const handleSelect = async (item) => {
   try {
     // 获取并转换历史记录
@@ -140,6 +141,7 @@ const handleSelect = async (item) => {
 
     // 持久化当前会话
     localStorage.setItem('currentConversation', JSON.stringify(history))
+    loadHistory()
     console.log(localStorage.getItem('currentConversation'))
   } catch (error) {
     ElMessage.error('加载历史对话失败: ' + error.message)
@@ -162,8 +164,15 @@ onMounted(async () => {
   }
 })
 const startNewChat = () => {
+  localStorage.removeItem('currentConversation')
+  localStorage.removeItem('ccid')
 
+  // 清空响应式数组的正确方式
+  messages.value.splice(0, messages.value.length)
+  conversationHistory.value.splice(0, conversationHistory.value.length)
 
+  // 强制触发更新
+  loadHistory()
 }
 const openSettings = () => {
 

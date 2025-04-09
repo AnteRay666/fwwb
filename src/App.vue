@@ -9,7 +9,11 @@ import MainPage from './views/MainPage.vue'
 </script>
 <script>
 import { useUserStore } from './stores/user'
+import { useChatMessages } from '@/components/composables/useChatMessages'
+import { onMounted } from 'vue'
 
+
+const { loadHistory } = useChatMessages()
 export default {
   setup() {
     const userStore = useUserStore()
@@ -21,5 +25,8 @@ export default {
     }
   }
 }
+onMounted(() => {
+  loadHistory()
+})
 
 </script>

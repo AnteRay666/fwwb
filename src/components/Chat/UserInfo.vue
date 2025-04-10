@@ -38,6 +38,7 @@ const { isLoggedIn, username } = storeToRefs(userStore)
 const handleAuthSuccess = (payload) => {
     // console.log('[UserInfo] 收到登录数据:', payload)
     userStore.handleAuthSuccess(payload)
+    window.location.reload();
 }
 const props = defineProps({
     ccname: String  // 添加 prop 定义

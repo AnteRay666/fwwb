@@ -112,7 +112,9 @@ export default {
                     }
                     this.$message.error(errorMessage);
                 } finally {
+
                     this.isLoading = false;
+                    window.location.reload();
                 }
             });
         }

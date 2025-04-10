@@ -9,24 +9,27 @@
                     :is-last="index === messages.length - 1" />
                 <Recommend v-if="recommendData.length > 0" :questions="recommendData" @select="handleSelectQuestion" />
             </div>
-
         </div>
-        <InputArea class="InputArea" :model-value="currentInput" :is-generating="isGenerating"
-            @recommend-data="handleRecommendData" @submit="handleSubmit" />
+        <InputArea :model-value="currentInput" :is-generating="isGenerating" @recommend-data="handleRecommendData"
+            @submit="handleSubmit" />
     </div>
 </template>
 
 <script setup>
 import { ref, watch, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRoute } from 'vue-router'
+
 import UserInfo from './UserInfo.vue'
 import InputArea from './InputArea.vue'
 import MessageItem from './MessageItem.vue'
 import Recommend from './Recommend.vue'
+
 import { useChatMessages } from '../composables/useChatMessages'
 import { useRecommend } from '../composables/useRecommend.js'
-import { useRoute } from 'vue-router'
+
 import { useChatStore } from '@/stores/chat'
+
 const route = useRoute()
 const chatStore = useChatStore()
 const ccname = ref()
@@ -132,12 +135,12 @@ onMounted(() => {
 }
 
 /* 确保 UserInfo 固定在顶部 */
-.user-info-container {
+/* .user-info-container {
     position: sticky;
     top: 0;
     background-color: white;
     z-index: 10;
-}
+} */
 
 /* 确保 messages-wrapper 可以滚动 */
 .messages-wrapper {
@@ -152,7 +155,7 @@ onMounted(() => {
 }
 
 /* 确保 InputArea 固定在底部 */
-.InputArea {
+.inputArea {
     position: sticky;
     bottom: 0;
     background-color: white;

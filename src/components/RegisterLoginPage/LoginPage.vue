@@ -117,6 +117,7 @@ export default {
 
             } finally {
                 this.isLoading = false;
+                window.location.reload();
             }
         }
     }

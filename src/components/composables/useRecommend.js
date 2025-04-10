@@ -12,8 +12,9 @@ export function useRecommend() {
             loading.value = true
             error.value = null
             const authToken = localStorage.getItem('authToken')
+            const apiUrl = import.meta.env.VITE_API_URL;
             const response = await axios.post(
-                'http://114.55.146.90:8080/api.example.com/v1/related_questions',
+                apiUrl + '/api.example.com/v1/related_questions',
                 { question: content },
                 {
                     headers: {

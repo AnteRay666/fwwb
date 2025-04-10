@@ -81,9 +81,9 @@ export default {
                         username: this.form.username,
                         passwordHash: hashedPassword
                     };
-
+                    const apiUrl = import.meta.env.VITE_API_URL;
                     // 发送注册请求
-                    const response = await axios.post('http://114.55.146.90:8080/api/user/register', null, {
+                    const response = await axios.post(apiUrl + '/api/user/register', null, {
                         params,
                         headers: {
                             'Content-Type': 'application/json',

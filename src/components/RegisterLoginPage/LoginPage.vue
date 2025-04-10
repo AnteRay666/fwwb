@@ -59,8 +59,9 @@ export default {
                 console.log("1");
                 console.log(passwordHash);
                 // 发送登录请求
+                const apiUrl = import.meta.env.VITE_API_URL;
                 const response = await axios.post(
-                    'http://114.55.146.90:8080/api/user/login',
+                    apiUrl + '/api/user/login',
                     {
                         username: this.form.username,
                         passwordHash: passwordHash

@@ -57,9 +57,10 @@ export function useChatMessages() {
             }
             console.log("requestBody:")
             console.log(requestBody)
+            const apiUrl = import.meta.env.VITE_API_URL;
             await axios({
                 method: 'post',
-                url: 'http://114.55.146.90:8080/api.example.com/v1/chat/completions',
+                url: apiUrl + '/api.example.com/v1/chat/completions',
                 data: requestBody,
                 headers: {
                     'Authorization': localStorage.getItem('authToken') || '',

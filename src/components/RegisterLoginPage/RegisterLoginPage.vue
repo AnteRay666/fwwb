@@ -70,7 +70,7 @@ export default {
 // 修正事件定义
 defineEmits(['update:visible', 'success'])
 </script>
-<style>
+<style scoped>
 .component-container {
     min-height: 300px;
     /* 保持内容高度稳定 */

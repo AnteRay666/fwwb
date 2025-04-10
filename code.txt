@@ -1,0 +1,448 @@
+<!-- @components/Chat/ChatWindow.vue -->
+<template>
+    <div class="chat-container">
+        <UserInfo />
+        <div ref="messagesContainer" class="messages-wrapper">
+            <div class="messages-scroller">
+                <MessageItem v-for="(msg, index) in messages" :key="msg.tempId || msg.id" :message="msg"
+                    :is-generating="isGenerating && index === messages.length - 1"
+                    :is-last="index === messages.length - 1" />
+
+            </div>
+            <Recommend v-if="recommendData.length > 0" :questions="recommendData" @select="handleSelectQuestion" />
+        </div>
+        <InputArea :model-value="currentInput" :is-generating="isGenerating" @recommend-data="handleRecommendData"
+            @submit="handleSubmit" />
+    </div>
+</template>
+
+<script setup>
+import { ref, watch, nextTick, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import UserInfo from './UserInfo.vue'
+import InputArea from './InputArea.vue'
+import MessageItem from './MessageItem.vue'
+import Recommend from './Recommend.vue'
+import { useChatMessages } from '../composables/useChatMessages'
+import { useRecommend } from '../composables/useRecommend.js'
+import { useRoute } from 'vue-router'
+import { useChatStore } from '@/stores/chat'
+const route = useRoute()
+const chatStore = useChatStore()
+
+
+const {
+    messages,
+    isGenerating,
+    handleSubmit: submitToAI,
+    stopGeneration, handleError,
+} = useChatMessages()
+
+const loadMessages = async (id) => {
+    try {
+        const cached = localStorage.getItem(`conversation_${id}`)
+        if (cached) {
+            messages.value = JSON.parse(cached)
+        }
+        const data = await chatStore.getconversationList(id)
+        messages.value = data
+        localStorage.setItem(`conversation_${id}`, JSON.stringify(data))
+    } catch (err) {
+        // error handling
+    }
+}
+
+
+const { getRelatedQuestions } = useRecommend()
+const recommendData = ref([])
+
+const handleRecommendData = (questions) => {
+    recommendData.value = questions
+}
+
+
+const currentInput = ref('')
+const handleSelectQuestion = (question) => {
+    currentInput.value = question
+    recommendData.value = []
+    // 自动聚焦输入框
+    nextTick(() => {
+        document.querySelector('.input-field')?.focus()
+    })
+}
+
+// 处理用户提交
+const handleSubmit = async ({ content, model }) => {
+    try {
+        recommendData.value = []
+        await submitToAI({ content, model })
+        if (localStorage.getItem('ifrecommend') === 'true') {
+            const { questions } = await getRelatedQuestions(content)
+            recommendData.value = questions
+        }
+    } catch (error) {
+        ElMessage.error(error.message)
+    }
+}
+const messagesContainer = ref(null)
+const scrollToBottom = () => {
+    if (messagesContainer.value) {
+        const container = messagesContainer.value
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100
+        if (isNearBottom) {
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: 'smooth'
+            })
+        }
+    }
+}
+watch(
+    () => route.params.id,
+    async (newId) => {
+        if (newId) {
+            try {
+                const history = await chatStore.getconversationList(newId)
+                messages.value = history.messages // 根据实际数据结构调整
+            } catch (error) {
+                console.error('加载对话失败:', error)
+            }
+        }
+    },
+    { immediate: true } // 组件加载时立即执行
+)
+onMounted(() => {
+    if (!route.params.id) {
+        // 加载当前对话逻辑
+    }
+})
+</script>
+
+
+<!-- @components/Chat/InputArea.vue -->
+<template>
+    <div class="input-container-fixed">
+        <div class="input-wrapper">
+            <div class="control-bar">
+                <div class="model-selector">
+                    <select v-model="selectedModel" class="model-select">
+                        <option value="gpt-4o">gpt-4o</option>
+                        <option value="deepseek-r1">DeepSeek-R1</option>
+                        <option value="qwen-max">Qwen-Max</option>
+                    </select>
+                    <!-- <svg class="select-arrow" viewBox="0 0 24 24">
+                        <path d="M7 10l5 5 5-5H7z" />
+                    </svg> -->
+                </div>
+
+                <button class="recommend-button" :class="{ 'active': isRecommendActive }" @click="toggleRecommend">
+                    相关题目推荐
+                    <span class="status-dot"></span>
+                </button>
+            </div>
+
+            <div class="input-form">
+                <textarea ref="inputArea" v-model="inputContent" :disabled="isGenerating" placeholder="请输入您的问题..."
+                    rows="1" class="input-field" @keydown.enter.exact.prevent="handleSubmit" />
+                <button type="button" class="send-button" :disabled="!canSubmit" @click="handleSubmit">
+                    <svg v-if="!isGenerating" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                        height="24">
+                        <path fill="none" d="M0 0h24v24H0z" />
+                        <path
+                            d="M1.946 9.315c-.522-.174-.527-.455.01-.634l19.087-6.362c.529-.176.832.12.684.638l-5.454 19.086c-.15.529-.455.547-.679.045L12 14l6-8-8 6-6.636 2.812-.664-1.886c-.15-.529-.01-.818.356-.818l19.087-6.364c.367-.124.634.223.357.618l-5.454 19.086c-.278.974-.962 1.35-1.686 1.074L1 14.293l-1.313-3.938c-.24-.717.01-1.272.514-1.272h19.086c.504 0 .754.555.514 1.272L1.946 9.315z" />
+                    </svg>
+                    <svg v-else class="stop-indicator" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24"
+                        height="24">
+                        <!-- 外框脉冲动画 -->
+                        <path class="stop-outer" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20" fill="none"
+                            stroke="currentColor" stroke-width="1.5">
+                            <animate attributeName="opacity" values="0.3;0.6;0.3" dur="1.5s" repeatCount="indefinite" />
+                        </path>
+
+                        <!-- 中心停止符号 -->
+                        <path class="stop-inner" d="M8 8h8v8H8z" fill="currentColor" stroke="currentColor"
+                            stroke-width="0.5">
+                            <!-- 轻微缩放动画 -->
+                            <animate attributeName="transform" type="translate" values="-0.5 -0.5; 0 0; -0.5 -0.5"
+                                dur="0.8s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="status-bar">By ante | 当前模型: {{ modelDisplayName }} {{ isRecommendActive ? '相关题目推荐启用' :
+                '相关题目推荐禁用' }}</div>
+
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+
+import { useRecommend } from '../composables/useRecommend'
+
+const emit = defineEmits([
+    'submit',
+    'update:modelValue',
+    'toggle-recommend',
+    'recommend-data' // 新增事件
+])
+const inputContent = ref('')
+const selectedModel = ref('gpt-4o')
+const isGenerating = ref(false)
+const isRecommendActive = ref(false)  // 新增推荐状态
+
+
+onMounted(() => {
+    const savedState = localStorage.getItem('ifrecommend')
+    if (savedState !== null) {
+        isRecommendActive.value = savedState === 'true'
+    }
+})
+
+const props = defineProps({
+    isGenerating: Boolean,
+    modelValue: String
+})
+
+const toggleRecommend = () => {
+    // 切换状态时添加点击动画
+    const button = document.querySelector('.recommend-button')
+    button.classList.add('click-effect')
+
+    // 状态切换逻辑
+    isRecommendActive.value = !isRecommendActive.value
+
+    // 同步到本地存储
+    localStorage.setItem('ifrecommend', isRecommendActive.value)
+
+    // 触发父组件事件
+    emit('toggle-recommend', isRecommendActive.value)
+
+    // 移除动画类
+    setTimeout(() => {
+        button.classList.remove('click-effect')
+    }, 200)
+}
+
+
+// 模型显示名称映射
+const modelNames = {
+    'deepseek-r1': 'DeepSeek-R1',
+    'gpt-4o': 'GPT-4o',
+    'qwen-max': 'Qwen-Max'
+}
+
+// 计算属性
+const modelDisplayName = computed(() => modelNames[selectedModel.value])
+const canSubmit = computed(() =>
+    !isGenerating.value
+)
+
+const { getRelatedQuestions } = useRecommend
+// 提交处理
+const handleSubmit = async () => {
+    const content = inputContent.value
+    if (!content || props.isGenerating) return
+    // 打印调试信息
+    console.log('提交内容:', {
+        content,
+        model: selectedModel.value
+    })
+    emit('submit', {
+        content,
+        model: selectedModel.value
+    })
+    if (isRecommendActive.value) {
+        try {
+            const { questions } = await getRelatedQuestions(content)
+            emit('recommend-data', questions) // 新增事件
+        } catch (error) {
+            console.error('获取推荐失败:', error)
+        }
+    }
+    inputContent.value = ''
+}
+watch(
+    () => props.modelValue,
+    (newVal) => {
+        // 自动调整输入框高度
+        autoResizeTextarea()
+    }
+)
+
+
+const autoResizeTextarea = () => {
+    nextTick(() => {
+        const textarea = document.querySelector('.input-field')
+        if (textarea) {
+            textarea.style.height = 'auto'
+            textarea.style.height = `${textarea.scrollHeight}px`
+        }
+    })
+}
+</script>
+
+<!-- MessageItem.vue -->
+<template>
+    <div class="message-item" :class="message.role">
+        <div class="avatar-container">
+            <el-icon v-if="message.role === 'assistant'">
+                <Cpu />
+            </el-icon>
+            <el-icon v-else>
+                <User />
+            </el-icon>
+        </div>
+        <div class="message-content" :class="message.role">
+            <!-- 添加加载状态 -->
+            <div v-if="!message.content && isGenerating" class="loading-indicator">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+            <MarkdownRenderer v-if="message.role === 'assistant'" :content="message.content" />
+            <template v-else>{{ message.content }}</template>
+
+            <div class="message-meta">
+                <span v-if="message.model" class="model-tag">{{ modelNames[message.model] }}</span>
+                <!-- <span class="timestamp">{{ formatTime(message.timestamp) }}</span> -->
+            </div>
+        </div>
+
+    </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import MarkdownRenderer from './MarkdownRenderer.vue'
+import { User, Cpu } from '@element-plus/icons-vue'
+import { useChatMessages } from '../composables/useChatMessages'
+import { watch } from 'vue'
+const props = defineProps({
+    message: Object,
+    isGenerating: Boolean,
+    isLast: Boolean
+})
+const modelNames = {
+    'gpt-4o': 'GPT-4o',
+    'deepseek-r1': 'DeepSeek',
+    'qwen-max': 'Qwen'
+}
+const { conversationHistory } = useChatMessages()
+
+const orderedMessages = computed(() => {
+    return [...props.messages].sort((a, b) => a.timestamp - b.timestamp)
+})
+watch(conversationHistory, (newVal) => {
+    localStorage.setItem('currentConversation', JSON.stringify(newVal))
+    window.location.reload()
+}, { deep: true })
+
+</script>
+
+// composables/useRecommend.js
+import { ref } from 'vue'
+import axios from 'axios'
+
+export function useRecommend() {
+    const questions = ref([])
+    const loading = ref(false)
+    const error = ref(null)
+
+    const getRelatedQuestions = async (content) => {
+        try {
+            loading.value = true
+            error.value = null
+            const authToken = localStorage.getItem('authToken')
+            const response = await axios.post(
+                'http://114.55.146.90:8080/api.example.com/v1/related_questions',
+                { question: content },
+                {
+                    headers: {
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            )
+            console.log(response.data)
+
+            if (response.data.code === 1) {
+                questions.value = response.data.data?.relatedQuestions || []
+            } else {
+                throw new Error(response.data.msg || '获取相关问题失败')
+            }
+            return {
+                success: true,
+                questions: response.data.data?.relatedQuestions || []
+            }
+
+
+        } catch (err) {
+            error.value = err.response?.data?.message || err.message
+            questions.value = []
+        } finally {
+            loading.value = false
+        }
+    }
+
+    return {
+        getRelatedQuestions,
+        questions,
+        loading,
+        error
+    }
+}
+
+<!-- MainPage.vue-->
+
+<template>
+    <!-- 主体容器 -->
+    <div class="flex-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }"
+            :style="{ width: isSidebarCollapsed ? '64px' : '280px' }">
+            <SiderPage :is-collapsed="isSidebarCollapsed" @toggle="toggleSidebar"
+                @menu-item-click="handleMenuItemClick" />
+        </aside>
+        <!-- 主内容区 -->
+        <main class="content">
+            <ChatWindow :messages="messages" />
+        </main>
+    </div>
+
+</template>
+
+<script setup>
+import { ref, watch } from 'vue'
+import SiderPage from '../components/Sider/SiderPage.vue'
+import ChatWindow from '../components/Chat/ChatWindow.vue'
+
+import { useRoute } from 'vue-router'
+import { useChatStore } from '@/stores/chat'
+const route = useRoute()
+const chatStore = useChatStore()
+
+// 当路由变化时更新当前会话ID
+watch(
+    () => route.params.id,
+    (newId) => {
+        if (newId) {
+            chatStore.setCurrentConversationId(newId)
+        }
+    },
+    { immediate: true }
+)
+
+const messages = ref([])
+
+const isSidebarCollapsed = ref(false)
+
+const toggleSidebar = () => {
+    isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+const handleMenuItemClick = (menuItem) => {
+    console.log('Menu item clicked:', menuItem)
+}
+</script>

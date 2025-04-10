@@ -1,4 +1,4 @@
-<!-- MessageItem.vue -->
+<!-- @components/Chat/MessageItem.vue -->
 <template>
     <div class="message-item" :class="message.role">
         <div class="avatar-container">
@@ -24,7 +24,6 @@
                 <!-- <span class="timestamp">{{ formatTime(message.timestamp) }}</span> -->
             </div>
         </div>
-
     </div>
 </template>
 

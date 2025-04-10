@@ -6,6 +6,7 @@ import axios from 'axios'
 export const useChatStore = defineStore('chat', () => {
     const chatHistory = ref([])
     const conversationList = ref()
+    const currentConversationName = ref(localStorage.getItem('ccname') || '未命名会话')
 
     const categorizedHistory = computed(() => {
         console.log('重新计算分类...')
@@ -106,10 +107,13 @@ export const useChatStore = defineStore('chat', () => {
                 }
             })
             console.log('原始响应数据:', response.data.data)
+            // localStorage.setItem('ccid', response.data.data.id)
+            // localStorage.setItem('ccname', response.data.data.recordName)
             console.log("1")
             if (response.data.code === 1) {
-
+                console.log("2")
                 // 转换数据结构
+                // const ccname = response.data.data.recordName
                 const converted = response.data.data.conversationList.map(item => ({
                     role: 'user',
                     content: item.question,
@@ -118,9 +122,14 @@ export const useChatStore = defineStore('chat', () => {
                     content: item.recordContent,
                 })))
                 conversationList.value = converted
+
                 localStorage.setItem('ccid', response.data.data.id)
-                // console.log('转换后的对话列表:', converted)
-                return converted
+                localStorage.setItem('ccname', response.data.data.recordName)
+                console.log('转换后的对话列表:', converted)
+                return {
+                    recordName: response.data.data.recordName,
+                    converted
+                }
             }
 
             console.log("2")
@@ -128,7 +137,45 @@ export const useChatStore = defineStore('chat', () => {
             console.error('获取失败:', error)
         }
     }
+    const currentConversationId = ref(null)
+
+    function setCurrentConversationId(id) {
+        currentConversationId.value = id
+        localStorage.setItem('current_conversation_id', id)
+    }
+
+    function getCurrentConversationId() {
+        return currentConversationId.value || localStorage.getItem('current_conversation_id')
+    }
+    const setCurrentConversationName = (name) => {
+        currentConversationName.value = name
+        localStorage.setItem('ccname', name)
+    }
+
+    const resetConversation = () => {
+        currentConversationId.value = null
+        currentConversationName.value = '未命名会话'
+        messages.value = []
+        localStorage.removeItem('currentConversation')
+        localStorage.removeItem('ccid')
+        localStorage.setItem('ccname', '未命名会话')
+    }
 
 
-    return { chatHistory, fetchChatHistory, categorizedHistory, getconversationList }
+    // 获取当前对话名称
+    const getCurrentConversationName = () => {
+        return currentConversationName.value
+    }
+
+    return {
+        chatHistory, categorizedHistory,
+        fetchChatHistory,
+        getconversationList,
+        getCurrentConversationId,
+        setCurrentConversationId,
+        currentConversationName,
+        setCurrentConversationName,
+        getCurrentConversationName,
+        resetConversation
+    }
 })

@@ -188,6 +188,7 @@ export function useChatMessages() {
         }
 
         conversationHistory.value.push(assistantResponse)
+        localStorage.setItem('ccname', conversationHistory.value.recordName)
         localStorage.setItem('currentConversation', JSON.stringify(conversationHistory.value))
         console.log(localStorage.getItem('currentConversation'))
     }
@@ -212,8 +213,8 @@ export function useChatMessages() {
             abortController = null
         }
     }
-    // console.log(messages)
-    loadHistory()
+
+    // loadHistory()
     return {
         messages,
         inputQuestion,

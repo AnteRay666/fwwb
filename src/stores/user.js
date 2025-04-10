@@ -1,6 +1,6 @@
 // stores/user.js
 import { defineStore } from 'pinia'
-import { ElMessage } from 'element-plus'
+
 
 export const useUserStore = defineStore('user', {
     state: () => ({
@@ -8,6 +8,8 @@ export const useUserStore = defineStore('user', {
         username: localStorage.getItem('username') || '匿名用户',
         AuthToken: localStorage.getItem('authToken') || '',
         currentconversationid: localStorage.getItem('ccid') || null,
+        currentconversationname: localStorage.getItem('ccname') || null,
+        ifrecommend: localStorage.getItem('ifrecommend') || false,
         showAuthModal: false,  // 登录弹窗状态
         showUserInfo: false    // 用户信息弹窗状态
     }),

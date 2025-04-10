@@ -1,12 +1,18 @@
+// router/index.js
+
 import { createRouter, createWebHistory } from 'vue-router'
 import MainPage from '../views/MainPage.vue'
 
-// 移除登录注册路由，只保留主路由
 const routes = [
     {
         path: '/',
         name: 'Main',
         component: MainPage
+    },
+    {
+        path: '/chat/:id',
+        name: 'ChatDetail',
+        component: MainPage // 复用主布局
     }
 ]
 
@@ -14,5 +20,12 @@ const router = createRouter({
     history: createWebHistory(),
     routes
 })
-
+// import { useChatStore } from '@/stores/chat'
+// const chatStore = useChatStore()
+// router.beforeEach(async (to) => {
+//     if (to.name === 'ChatDetail') {
+//         const exists = await chatStore.checkConversationExists(to.params.id)
+//         if (!exists) return '/'
+//     }
+// })
 export default router

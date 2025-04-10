@@ -1,18 +1,22 @@
-<!-- InputArea.vue -->
+<!-- @components/Chat/InputArea.vue -->
 <template>
     <div class="input-container-fixed">
         <div class="input-wrapper">
-            <div class="model-selector">
-                <select v-model="selectedModel" class="model-select">
-                    <option value="gpt-4o">gpt-4o</option>
-                    <option value="deepseek-r1">DeepSeek-R1</option>
+            <div class="control-bar">
+                <div class="model-selector">
+                    <select v-model="selectedModel" class="model-select">
+                        <option value="gpt-4o">gpt-4o</option>
+                        <option value="deepseek-r1">DeepSeek-R1</option>
+                        <option value="qwen-max">Qwen-Max</option>
+                    </select>
+                </div>
 
-                    <option value="qwen-max">Qwen-Max</option>
-                </select>
-                <svg class="select-arrow" viewBox="0 0 24 24">
-                    <path d="M7 10l5 5 5-5H7z" />
-                </svg>
+                <button class="recommend-button" :class="{ 'active': isRecommendActive }" @click="toggleRecommend">
+                    相关题目推荐
+                    <span class="status-dot"></span>
+                </button>
             </div>
+
             <div class="input-form">
                 <textarea ref="inputArea" v-model="inputContent" :disabled="isGenerating" placeholder="请输入您的问题..."
                     rows="1" class="input-field" @keydown.enter.exact.prevent="handleSubmit" />
@@ -41,21 +45,62 @@
                     </svg>
                 </button>
             </div>
-            <div class="status-bar">By ante | 当前模型: {{ modelDisplayName }}</div>
+            <div class="status-bar">By ante | 当前模型: {{ modelDisplayName }} {{ isRecommendActive ? '相关题目推荐启用' :
+                '相关题目推荐禁用' }}</div>
 
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-const emit = defineEmits(['submit'])
+import { ref, computed, onMounted, watch } from 'vue'
+
+import { useRecommend } from '../composables/useRecommend'
+
+const emit = defineEmits([
+    'submit',
+    'update:modelValue',
+    'toggle-recommend',
+    'recommend-data' // 新增事件
+])
 const inputContent = ref('')
 const selectedModel = ref('gpt-4o')
 const isGenerating = ref(false)
-const props = defineProps({
-    isGenerating: Boolean
+const isRecommendActive = ref(false)  // 新增推荐状态
+
+
+onMounted(() => {
+    const savedState = localStorage.getItem('ifrecommend')
+    if (savedState !== null) {
+        isRecommendActive.value = savedState === 'true'
+    }
 })
+
+const props = defineProps({
+    isGenerating: Boolean,
+    modelValue: String
+})
+
+const toggleRecommend = () => {
+    // 切换状态时添加点击动画
+    const button = document.querySelector('.recommend-button')
+    button.classList.add('click-effect')
+
+    // 状态切换逻辑
+    isRecommendActive.value = !isRecommendActive.value
+
+    // 同步到本地存储
+    localStorage.setItem('ifrecommend', isRecommendActive.value)
+
+    // 触发父组件事件
+    emit('toggle-recommend', isRecommendActive.value)
+
+    // 移除动画类
+    setTimeout(() => {
+        button.classList.remove('click-effect')
+    }, 200)
+}
+
 
 // 模型显示名称映射
 const modelNames = {
@@ -67,30 +112,177 @@ const modelNames = {
 // 计算属性
 const modelDisplayName = computed(() => modelNames[selectedModel.value])
 const canSubmit = computed(() =>
-    !isGenerating.value && inputContent.value.trim().length > 0
+    !isGenerating.value
 )
 
-
+const { getRelatedQuestions } = useRecommend
 // 提交处理
-const handleSubmit = () => {
-    const content = inputContent.value.trim()
+const handleSubmit = async () => {
+    const content = inputContent.value
     if (!content || props.isGenerating) return
     // 打印调试信息
     console.log('提交内容:', {
-        content: inputContent.value.trim(),
+        content,
         model: selectedModel.value
     })
     emit('submit', {
-        content: inputContent.value.trim(),
+        content,
         model: selectedModel.value
     })
+    if (isRecommendActive.value) {
+        try {
+            const { questions } = await getRelatedQuestions(content)
+            emit('recommend-data', questions) // 新增事件
+        } catch (error) {
+            console.error('获取推荐失败:', error)
+        }
+    }
     inputContent.value = ''
 }
+watch(
+    () => props.modelValue,
+    (newVal) => {
+        // 自动调整输入框高度
+        autoResizeTextarea()
+    }
+)
 
+
+const autoResizeTextarea = () => {
+    nextTick(() => {
+        const textarea = document.querySelector('.input-field')
+        if (textarea) {
+            textarea.style.height = 'auto'
+            textarea.style.height = `${textarea.scrollHeight}px`
+        }
+    })
+}
 </script>
 
 <style>
-/* 添加新样式 */
+.status-bar.active {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.status-indicator {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* 优化控制栏布局 */
+.control-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+/* 优化推荐按钮间距 */
+.recommend-button {
+    height: 2.8rem;
+    margin: 12px;
+    padding: 8px 16px;
+    border-width: 1.5px;
+    border-radius: 8px;
+    width: 160px;
+    border: 2px solid #E5E7EB;
+    background: #F8F9FA;
+    color: #6b7280;
+    font-size: 0.875rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.3s ease,
+        background 0.3s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #6366F1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+}
+
+.recommend-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(59, 130, 246, 0.15);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+/* 激活状态 */
+.recommend-button.active {
+    background: #3b82f6 !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.recommend-button.active .status-dot {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* 点击动画 */
+.recommend-button.click-effect {
+    transform: scale(0.95);
+}
+
+.recommend-button.click-effect::after {
+    width: 120%;
+    height: 120%;
+    opacity: 0;
+}
+
+/* 禁用状态过渡 */
+.recommend-button:not(.active) {
+    transition:
+        all 0.3s ease,
+        transform 0.2s ease;
+}
+
+
+/* 保持输入区域对齐 */
+.input-form {
+    position: relative;
+    display: flex;
+    gap: 12px;
+}
+
+.input-field {
+    flex: 1;
+    min-height: 48px;
+    padding: 12px 56px 12px 16px;
+}
+
+.send-button {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    transform: none;
+
+}
+
+
+
+/* 优化激活状态指示 */
+.recommend-button.active {
+    border-width: 2px;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);
+}
+
 .auth-button-container {
     position: absolute;
     top: 1rem;
@@ -107,8 +299,9 @@ const handleSubmit = () => {
 .model-selector {
     right: -1rem;
     position: relative;
-    margin-bottom: 1rem;
+
     width: 100%;
+    flex: 1;
     max-width: 160px;
 }
 
@@ -118,9 +311,10 @@ const handleSubmit = () => {
     border: 2px solid #E5E7EB;
     border-radius: 8px;
     background: #F8F9FA;
+    color: #6b7280;
     font-size: 0.875rem;
-    appearance: none;
-    transition: all 0.2s ease;
+    text-align: center;
+    transition: all 0.3s ease;
 
     &:focus {
         outline: none;
@@ -273,10 +467,11 @@ const handleSubmit = () => {
 }
 
 .input-wrapper {
-    padding: 1.5rem 15%;
+    padding: 1rem 15%;
     max-width: 1200px;
     margin: 0 auto;
 }
+
 
 .input-form {
     position: relative;

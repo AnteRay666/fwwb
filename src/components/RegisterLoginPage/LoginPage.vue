@@ -25,7 +25,7 @@
 <script>
 import axios from 'axios';
 import sha256 from 'crypto-js/sha256';
-import { local } from 'd3';
+
 
 export default {
     data() {

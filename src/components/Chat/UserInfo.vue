@@ -8,6 +8,7 @@
                 </el-icon>
                 <span class="username">{{ username }}</span>
             </el-button>
+            <div class="ccname-container">{{ ccname || "未命名会话" }}</div>
         </div>
         <div v-else class="auth-buttons">
             <el-button type="primary" @click="userStore.toggleAuthModal(true)">
@@ -19,6 +20,7 @@
         <UserInfoDialog v-model:visible="userStore.showUserInfo" :username="username"
             @logout="userStore.handleLogout()" />
     </div>
+
 </template>
 
 <script setup>
@@ -29,7 +31,7 @@ import RegisterLoginPage from '../RegisterLoginPage/RegisterLoginPage.vue'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
-
+// const ccname = localStorage.getItem('ccname')
 // 使用 storeToRefs 保持响应式
 const { isLoggedIn, username } = storeToRefs(userStore)
 
@@ -37,16 +39,26 @@ const handleAuthSuccess = (payload) => {
     // console.log('[UserInfo] 收到登录数据:', payload)
     userStore.handleAuthSuccess(payload)
 }
-
-
+const props = defineProps({
+    ccname: String  // 添加 prop 定义
+})
 const handleMounted = () => {
     console.log('RegisterLoginPage 已挂载') // 调试用
 }
 </script>
 
-<style>
+<style scoped>
 .user-info-wrapper {
+    display: flex;
+    align-items: center;
     margin: 10px;
+}
+
+.ccname-container {
+    flex-grow: 1;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
 }
 
 .auth-buttons {

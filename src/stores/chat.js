@@ -7,9 +7,9 @@ export const useChatStore = defineStore('chat', () => {
     const chatHistory = ref([])
     const conversationList = ref()
     const currentConversationName = ref(localStorage.getItem('ccname') || '未命名会话')
+    const currentConversationId = ref(null)
 
     const categorizedHistory = computed(() => {
-        console.log('重新计算分类...')
         const now = new Date()
         console.log('当前时间:', now.toISOString())
         const categories = {
@@ -58,6 +58,9 @@ export const useChatStore = defineStore('chat', () => {
         return diffDays
     }
 
+    //根据全局环境变量设置apiurl
+    const url = import.meta.env.VITE_API_URL;
+
     const fetchChatHistory = async () => {
         try {
             console.log('开始获取聊天记录...')
@@ -67,9 +70,15 @@ export const useChatStore = defineStore('chat', () => {
                 return
             }
 
+            const follow = import.meta.env.VITE_HISTORTY_LIST_API;
+            const apiurl = url + follow;
+            console.log("ChatHistory apiurl:", apiurl)
+
+
+
             const response = await axios({
                 method: 'get',
-                url: 'http://114.55.146.90:8080/api/record/list',
+                url: apiurl,
                 headers: {
                     'Authorization': authToken,
                 }
@@ -99,27 +108,31 @@ export const useChatStore = defineStore('chat', () => {
                 console.error('未找到授权令牌')
                 return
             }
+
+            const follow = import.meta.env.VITE_HISTORY_GETBYID_API;
+            const apiurl = url + follow;
+            console.log("HconversationList apiurl:", apiurl)
+
             const response = await axios({
                 method: 'get',
-                url: `http://114.55.146.90:8080/api/record/getAll/${id}`,
+                url: apiurl + `/${id}`,
                 headers: {
                     'Authorization': authToken,
                 }
             })
             console.log('原始响应数据:', response.data.data)
-            // localStorage.setItem('ccid', response.data.data.id)
-            // localStorage.setItem('ccname', response.data.data.recordName)
             console.log("1")
             if (response.data.code === 1) {
                 console.log("2")
-                // 转换数据结构
-                // const ccname = response.data.data.recordName
+
                 const converted = response.data.data.conversationList.map(item => ({
                     role: 'user',
                     content: item.question,
+                    timestamp: item.recordTime
                 })).concat(response.data.data.conversationList.map(item => ({
                     role: 'assistant',
                     content: item.recordContent,
+                    timestamp: item.recordTime
                 })))
                 conversationList.value = converted
 
@@ -137,29 +150,24 @@ export const useChatStore = defineStore('chat', () => {
             console.error('获取失败:', error)
         }
     }
-    const currentConversationId = ref(null)
 
-    function setCurrentConversationId(id) {
+
+
+    const setCurrentConversationId = (id) => {
         currentConversationId.value = id
         localStorage.setItem('current_conversation_id', id)
     }
 
-    function getCurrentConversationId() {
+    const getCurrentConversationId = () => {
         return currentConversationId.value || localStorage.getItem('current_conversation_id')
     }
+
+
     const setCurrentConversationName = (name) => {
         currentConversationName.value = name
         localStorage.setItem('ccname', name)
     }
 
-    const resetConversation = () => {
-        currentConversationId.value = null
-        currentConversationName.value = '未命名会话'
-        messages.value = []
-        localStorage.removeItem('currentConversation')
-        localStorage.removeItem('ccid')
-        localStorage.setItem('ccname', '未命名会话')
-    }
 
 
     // 获取当前对话名称
@@ -175,7 +183,6 @@ export const useChatStore = defineStore('chat', () => {
         setCurrentConversationId,
         currentConversationName,
         setCurrentConversationName,
-        getCurrentConversationName,
-        resetConversation
+        getCurrentConversationName
     }
 })

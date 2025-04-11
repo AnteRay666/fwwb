@@ -45,9 +45,6 @@ const modelNames = {
 }
 const { conversationHistory } = useChatMessages()
 
-const orderedMessages = computed(() => {
-    return [...props.messages].sort((a, b) => a.timestamp - b.timestamp)
-})
 watch(conversationHistory, (newVal) => {
     localStorage.setItem('currentConversation', JSON.stringify(newVal))
     window.location.reload()

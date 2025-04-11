@@ -4,10 +4,11 @@
         <UserInfo :ccname="ccname" />
         <div ref="messagesContainer" class="messages-wrapper">
             <div class="messages-scroller">
-                <MessageItem v-for="(msg, index) in messages" :key="msg.tempId || msg.id" :message="msg"
+                <MessageItem v-for="(msg, index) in sortedMessages" :key="msg.tempId || msg.id" :message="msg"
                     :is-generating="isGenerating && index === messages.length - 1"
                     :is-last="index === messages.length - 1" />
-                <Recommend v-if="recommendData.length > 0" :questions="recommendData" @select="handleSelectQuestion" />
+                <Recommend v-if="recommendData.length > 0" :questions="recommendData" :refence_files="refence_filesData"
+                    @select="handleSelectQuestion" />
             </div>
         </div>
         <InputArea :model-value="currentInput" :is-generating="isGenerating" @recommend-data="handleRecommendData"
@@ -16,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue'
+import { ref, watch, nextTick, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRoute } from 'vue-router'
 
@@ -42,6 +43,15 @@ const {
 } = useChatMessages()
 const isLoading = ref(false)
 
+
+
+const sortedMessages = computed(() => {
+    // 双重保障：确保始终返回数组
+    const msgArray = Array.isArray(messages.value) ? messages.value : []
+    return [...msgArray].sort((a, b) => a.timestamp - b.timestamp)
+})
+
+
 const loadHistoryMessages = async (id) => {
     try {
         const cached = localStorage.getItem(`conversation_${id}`)
@@ -50,12 +60,12 @@ const loadHistoryMessages = async (id) => {
         }
         // console.log('开始加载对话记录，ID:', id)
         const data = await chatStore.getconversationList(id)
-        // console.log('加载到的数据:', data)
+        console.log('加载到的数据:', data)
         if (data) {
             ccname.value = data.recordName
             messages.value = data.converted
             // console.log('ccname 设置为:', data.recordName)
-            // console.log('消息列表设置为:', data.converted)   
+            console.log('消息列表设置为:', data.converted)
         }
         localStorage.setItem(`conversation_${id}`, JSON.stringify(data))
     } catch (err) {
@@ -64,15 +74,20 @@ const loadHistoryMessages = async (id) => {
 }
 
 
-const { getRelatedQuestions } = useRecommend()
-const recommendData = ref([])
+const { getRelatedQuestions, getRefence_file } = useRecommend()
 
-const handleRecommendData = (questions) => {
+const recommendData = ref([])
+const refence_filesData = ref()
+
+
+const handleRecommendData = ({ questions, refence_files }) => {
     recommendData.value = questions
+    refence_filesData.value = refence_files
 }
 
-
 const currentInput = ref('')
+
+
 const handleSelectQuestion = (question) => {
     currentInput.value = question
     recommendData.value = []
@@ -83,14 +98,25 @@ const handleSelectQuestion = (question) => {
 }
 
 // 处理用户提交
-const handleSubmit = async ({ content, model }) => {
+const handleSubmit = async ({ content, model, rag }) => {
     try {
+
         recommendData.value = []
-        await submitToAI({ content, model })
+        refence_filesData.value = ''
+        await submitToAI({ content, model, rag })
         if (localStorage.getItem('ifrecommend') === 'true') {
-            const { questions } = await getRelatedQuestions(content)
+            const [
+                { questions },
+                { references }
+            ] = await Promise.all([
+                getRelatedQuestions(content),
+                getRefence_file(content)
+            ])
             recommendData.value = questions
+            refence_filesData.value = references
         }
+
+
     } catch (error) {
         ElMessage.error(error.message)
     }
@@ -116,6 +142,7 @@ watch(
         } else {
             // 处理新建对话逻辑
             messages.value = []
+            ccname.value = ''
         }
     },
     { immediate: true }
@@ -126,6 +153,8 @@ onMounted(() => {
     }
 })
 </script>
+
+
 <style scoped>
 .chat-container {
     flex: 1;

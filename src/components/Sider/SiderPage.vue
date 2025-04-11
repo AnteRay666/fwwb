@@ -33,6 +33,7 @@
         </div>
       </div>
     </div>
+
     <!-- 展开状态 -->
     <div v-show="!isCollapsed" class="expanded-mode">
       <!-- 统一使用icon-btn样式 -->
@@ -115,6 +116,8 @@
         </el-scrollbar>
       </div>
     </div>
+
+
   </div>
 </template>
 
@@ -128,6 +131,8 @@ import { useChatMessages } from '../composables/useChatMessages'
 defineProps({
   isCollapsed: Boolean
 })
+
+
 const chatStore = useChatStore()
 const { loadHistory, messages } = useChatMessages()
 //切换路由以加载内容
@@ -136,6 +141,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const handleSelect = (item) => {
+  console.log(item)
   router.push({
     name: 'ChatDetail',
     params: { id: item.id }
@@ -157,9 +163,23 @@ onMounted(async () => {
     console.error('获取历史记录失败:', error)
   }
 })
+const resetConversation = () => {
+  // currentConversationId.value = null
+  // currentConversationName.value = '未命名会话'
+  messages.value = []
+  localStorage.setItem('currentConversation', null)
+  localStorage.setItem('ccid', null)
+  localStorage.setItem('ccname', '未命名会话')
+
+  console.log('会话已重置')
+}
+
+
+
 const startNewChat = () => {
-  chatStore.resetConversation()
+  resetConversation()
   router.push('/')
+
 }
 const openSettings = () => {
 

@@ -10,7 +10,7 @@ export function useChatMessages() {
     const pendingMessages = new Map()
     const conversationHistory = ref([])
 
-    const handleSubmit = async ({ content, model }) => {
+    const handleSubmit = async ({ content, model, rag }) => {
         if (!content || isGenerating.value) return
         const tempId = Date.now().toString()
         try {
@@ -46,6 +46,7 @@ export function useChatMessages() {
             })
             // API请求
             const ccid = localStorage.getItem('ccid')
+
             const requestBody = {
                 id: ccid,
                 model: model,
@@ -53,14 +54,23 @@ export function useChatMessages() {
                     .filter(m => ['user', 'assistant'].includes(m.role))
                     .map(({ role, content }) => ({ role, content })), // 只保留必要字段
                 maxTokens: null,
-                temperature: null
+                temperature: null,
+                flag: rag
             }
+
+
             console.log("requestBody:")
             console.log(requestBody)
-            const apiUrl = import.meta.env.VITE_API_URL;
+
+            //根据全局环境变量设置apiurl
+            const url = import.meta.env.VITE_API_URL;
+            const follow = import.meta.env.VITE_CHAT_COMPLETIONS_API;
+            const apiurl = url + follow;
+            console.log("apiurl:", apiurl)
+
             await axios({
                 method: 'post',
-                url: apiUrl + '/api.example.com/v1/chat/completions',
+                url: apiurl,
                 data: requestBody,
                 headers: {
                     'Authorization': localStorage.getItem('authToken') || '',

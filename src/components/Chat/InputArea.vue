@@ -5,14 +5,20 @@
             <div class="control-bar">
                 <div class="model-selector">
                     <select v-model="selectedModel" class="model-select">
-                        <option value="gpt-4o">gpt-4o</option>
+                        <option value="gpt-4o">GPT-4o</option>
                         <option value="deepseek-r1">DeepSeek-R1</option>
                         <option value="qwen-max">Qwen-Max</option>
                     </select>
                 </div>
-
+                <div class="rag-selector">
+                    <select v-model="selectedrag" class="rag-select">
+                        <option value="BOOK">BOOK</option>
+                        <option value="RECIPE">RECIPE</option>
+                        <option value="GRAPH">GRAPH</option>
+                    </select>
+                </div>
                 <button class="recommend-button" :class="{ 'active': isRecommendActive }" @click="toggleRecommend">
-                    相关题目推荐
+                    相关推荐
                     <span class="status-dot"></span>
                 </button>
             </div>
@@ -45,8 +51,9 @@
                     </svg>
                 </button>
             </div>
-            <div class="status-bar">By ante | 当前模型: {{ modelDisplayName }} {{ isRecommendActive ? '相关题目推荐启用' :
-                '相关题目推荐禁用' }}</div>
+            <div class="status-bar">当前模型: {{ modelDisplayName }} | 当前RAG:{{ RagDisplayName }} | {{
+                isRecommendActive ? '相关推荐启用' :
+                    '相关推荐禁用' }}</div>
 
         </div>
     </div>
@@ -56,6 +63,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 
 import { useRecommend } from '../composables/useRecommend'
+const { getRelatedQuestions, getRefence_file } = useRecommend()
+
 
 const emit = defineEmits([
     'submit',
@@ -64,7 +73,9 @@ const emit = defineEmits([
     'recommend-data' // 新增事件
 ])
 const inputContent = ref('')
-const selectedModel = ref('gpt-4o')
+const selectedModel = ref('qwen-max')
+const selectedrag = ref('BOOK')
+
 const isGenerating = ref(false)
 const isRecommendActive = ref(false)  // 新增推荐状态
 
@@ -101,7 +112,7 @@ const toggleRecommend = () => {
     }, 200)
 }
 
-
+// begin block-001
 // 模型显示名称映射
 const modelNames = {
     'deepseek-r1': 'DeepSeek-R1',
@@ -109,13 +120,23 @@ const modelNames = {
     'qwen-max': 'Qwen-Max'
 }
 
+const RAGNames = {
+    'BOOK': 'BOOK',
+    'RECIPE': 'RECIPE',
+    'GRAPH': 'GRAPH'
+}
+
 // 计算属性
 const modelDisplayName = computed(() => modelNames[selectedModel.value])
+const RagDisplayName = computed(() => RAGNames[selectedrag.value])
+
+// end block-001
 const canSubmit = computed(() =>
     !isGenerating.value
 )
 
-const { getRelatedQuestions } = useRecommend
+
+
 // 提交处理
 const handleSubmit = async () => {
     const content = inputContent.value
@@ -123,20 +144,42 @@ const handleSubmit = async () => {
     // 打印调试信息
     console.log('提交内容:', {
         content,
-        model: selectedModel.value
+        model: selectedModel.value,
+        rag: selectedrag.value
     })
+
     emit('submit', {
         content,
-        model: selectedModel.value
+        model: selectedModel.value,
+        rag: selectedrag.value
     })
+
     if (isRecommendActive.value) {
         try {
-            const { questions } = await getRelatedQuestions(content)
-            emit('recommend-data', questions) // 新增事件
+            // const { questions } = await getRelatedQuestions(content)
+            // const { refence_file } = await getRefence_file(content)
+            // emit('recommend-data', questions, refence_file) // 新增事件
+            // 并行获取两个推荐数据
+            const [questionsRes, refenceRes] = await Promise.all([
+                getRelatedQuestions(content),
+                getRefence_file(content)
+            ])
+
+            // 发射包含两个参数的事件
+            emit('recommend-data', {
+                questions: questionsRes.questions,
+                refence_files: refenceRes.references
+            })
+
+
+
         } catch (error) {
             console.error('获取推荐失败:', error)
+            emit('recommend-data', { questions: [], refence_files: '' })
         }
     }
+
+
     inputContent.value = ''
 }
 watch(
@@ -334,6 +377,33 @@ const autoResizeTextarea = () => {
     fill: #64748B;
 }
 
+.rag-selector {
+    right: -1rem;
+    position: relative;
+
+    width: 100%;
+    flex: 1;
+    max-width: 160px;
+}
+
+.rag-select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    background: #F8F9FA;
+    color: #6b7280;
+    font-size: 0.875rem;
+    text-align: center;
+    transition: all 0.3s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #6366F1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+}
+
 /* 调整输入区域布局 */
 .input-form {
     display: grid;
@@ -460,8 +530,10 @@ const autoResizeTextarea = () => {
     bottom: 0;
     left: 0;
     right: 0;
+
     background: white;
-    border-top: 1px solid #E5E7EB;
+    /* border-top: 1px solid #E5E7EB;*/
+    border: 0;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
     z-index: 10;
 }

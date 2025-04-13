@@ -57,8 +57,6 @@ export function useChatMessages() {
                 temperature: null,
                 flag: rag
             }
-
-
             console.log("requestBody:")
             console.log(requestBody)
 
@@ -122,22 +120,27 @@ export function useChatMessages() {
                 const jsonStr = dataChunk.replace(/^data:/, '').trim()
                 const data = JSON.parse(jsonStr)
 
-
-                if (data.userHistoryVO != null) {
-                    // console.log("baka")
-                    localStorage.setItem('ccid', data.userHistoryVO.id)
-                    updateFinalMessage(tempId, data)
-                    return
-                }
-
                 const contentChunk = data.choices?.[0]?.delta?.content ||
                     data.choices?.[0]?.message?.content ||
                     ''
+
+                if (data.userHistoryVO != null) {
+
+                    // console.log("baka")
+                    tracking.fullContent += contentChunk
+                    updateMessageContent(tempId, tracking.fullContent)
+
+                    localStorage.setItem('ccid', data.userHistoryVO.id)
+                    console.log(localStorage.getItem('ccid'))
+                    updateFinalMessage(tempId, data)
+                    return
+                }
 
                 if (contentChunk) {
                     tracking.fullContent += contentChunk
                     updateMessageContent(tempId, tracking.fullContent)
                 }
+
 
             } catch (e) {
                 console.error('解析异常:', e, '原始数据:', dataChunk)
@@ -178,6 +181,7 @@ export function useChatMessages() {
     }
     // 更新最终状态
     const updateFinalMessage = (tempId, data) => {
+        console.log('更新最终状态')
         const index = messages.value.findIndex(m => m.tempId === tempId)
         if (index === -1) return
 
@@ -199,9 +203,14 @@ export function useChatMessages() {
         }
 
         conversationHistory.value.push(assistantResponse)
+        // localStorage.setItem('ccid', conversationHistory.value.id)
+        console.log(conversationHistory.value)
         localStorage.setItem('ccname', conversationHistory.value.recordName)
         localStorage.setItem('currentConversation', JSON.stringify(conversationHistory.value))
+
+        // handlenew(localStorage.getItem('ccid'))
         console.log(localStorage.getItem('currentConversation'))
+        console.log('已更新最终状态')
     }
     // console.log('解析后的数据:', data)
     // 错误处理
@@ -224,7 +233,14 @@ export function useChatMessages() {
             abortController = null
         }
     }
-
+    const handlenew = (item) => {
+        loadHistory()
+        console.log(item)
+        router.push({
+            name: 'ChatDetail',
+            params: { id: item.id }
+        })
+    }
     // loadHistory()
     return {
         messages,

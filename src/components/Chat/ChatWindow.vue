@@ -34,6 +34,29 @@ import { useChatStore } from '@/stores/chat'
 const route = useRoute()
 const chatStore = useChatStore()
 const ccname = ref()
+const currentInput = ref('')
+
+
+const handleSelectQuestion = (question) => {
+    currentInput.value = null
+    currentInput.value = question
+    // recommendData.value = []
+    // 自动聚焦输入框
+    nextTick(() => {
+        const input = document.querySelector('.input-field')
+        if (input) {
+            // 确保触发双向绑定
+            input.value = question
+            const event = new Event('input', { bubbles: true })
+            input.dispatchEvent(event)
+
+            // 聚焦并移动光标到末尾
+            input.focus()
+            input.setSelectionRange(question.length, question.length)
+        }
+    })
+}
+
 
 const {
     messages,
@@ -43,14 +66,11 @@ const {
 } = useChatMessages()
 const isLoading = ref(false)
 
-
-
 const sortedMessages = computed(() => {
     // 双重保障：确保始终返回数组
     const msgArray = Array.isArray(messages.value) ? messages.value : []
     return [...msgArray].sort((a, b) => a.timestamp - b.timestamp)
 })
-
 
 const loadHistoryMessages = async (id) => {
     try {
@@ -74,27 +94,13 @@ const loadHistoryMessages = async (id) => {
 }
 
 
-const { getRelatedQuestions, getRefence_file } = useRecommend()
 
+const { getRelatedQuestions, getRefence_file } = useRecommend()
 const recommendData = ref([])
 const refence_filesData = ref()
-
-
 const handleRecommendData = ({ questions, refence_files }) => {
     recommendData.value = questions
     refence_filesData.value = refence_files
-}
-
-const currentInput = ref('')
-
-
-const handleSelectQuestion = (question) => {
-    currentInput.value = question
-    recommendData.value = []
-    // 自动聚焦输入框
-    nextTick(() => {
-        document.querySelector('.input-field')?.focus()
-    })
 }
 
 // 处理用户提交
@@ -122,6 +128,7 @@ const handleSubmit = async ({ content, model, rag }) => {
     }
 }
 const messagesContainer = ref(null)
+
 const scrollToBottom = () => {
     if (messagesContainer.value) {
         const container = messagesContainer.value
@@ -134,6 +141,7 @@ const scrollToBottom = () => {
         }
     }
 }
+
 watch(
     () => route.params.id,
     (newId) => {

@@ -14,14 +14,12 @@ export function useRecommend() {
     // console.log(authToken)
     const getRelatedQuestions = async (content) => {
         try {
+            console.log("开始获得相关问题")
             loading.value = true
             error.value = null
             const follow = import.meta.env.VITE_RELATED_QUESTIONS_API;
             const apiurl = url + follow;
             console.log("related_questions apiurl:", apiurl)
-
-
-
             const response = await axios.post(
                 apiurl,
                 { question: content },
@@ -51,10 +49,13 @@ export function useRecommend() {
             questions.value = []
         } finally {
             loading.value = false
+            console.log("已获得相关问题")
         }
     }
     const getRefence_file = async (content) => {
         try {
+
+            console.log("开始获得相关文件")
             loading.value = true
             error.value = null
 
@@ -90,6 +91,7 @@ export function useRecommend() {
             return { success: false, error: error.value }
         } finally {
             loading.value = false
+            console.log("已获得相关文件")
         }
 
     }

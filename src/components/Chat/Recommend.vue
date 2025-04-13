@@ -11,7 +11,7 @@
             </h3>
             <div class="question-grid">
                 <el-card v-for="(question, index) in questions" :key="index" class="question-card" shadow="hover"
-                    @click="$emit('select', question)">
+                    @click="handleClick(question)">
                     <div class="question-content">
                         <MarkdownRenderer :content="`${index + 1}. ${question}`" />
                     </div>
@@ -49,7 +49,14 @@ defineProps({
         default: ''
     }
 })
-defineEmits(['select'])
+const emit = defineEmits(['select'])
+
+const handleClick = (question) => {
+    console.log('触发选择:', question) // 添加调试日志
+    emit('select', question)
+}
+
+
 </script>
 
 <style scoped lang="scss">

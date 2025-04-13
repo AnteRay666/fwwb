@@ -61,15 +61,25 @@ const renderContent = (content) => {
 }
 
 // 渲染逻辑
+// 渲染逻辑
 const updateContent = async () => {
   if (!container.value) return
 
+  // 渲染 Markdown 内容
   container.value.innerHTML = renderContent(props.content)
 
+  // 确保 DOM 已更新
   await nextTick()
+
   // 高亮所有代码块
   container.value.querySelectorAll('pre code').forEach((block) => {
     hljs.highlightElement(block)
+  })
+
+  // 修改所有链接为新标签页打开
+  container.value.querySelectorAll('a').forEach((link) => {
+    link.setAttribute('target', '_blank')
+    link.setAttribute('rel', 'noopener noreferrer') // 安全最佳实践
   })
 }
 

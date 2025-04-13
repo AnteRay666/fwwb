@@ -8,6 +8,7 @@
                         <option value="gpt-4o">GPT-4o</option>
                         <option value="deepseek-r1">DeepSeek-R1</option>
                         <option value="qwen-max">Qwen-Max</option>
+                        <option value="qwen-plus-latest">Qwen-Plus</option>
                     </select>
                 </div>
                 <div class="rag-selector">
@@ -15,6 +16,7 @@
                         <option value="BOOK">BOOK</option>
                         <option value="RECIPE">RECIPE</option>
                         <option value="GRAPH">GRAPH</option>
+
                     </select>
                 </div>
                 <button class="recommend-button" :class="{ 'active': isRecommendActive }" @click="toggleRecommend">
@@ -60,7 +62,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 
 import { useRecommend } from '../composables/useRecommend'
 const { getRelatedQuestions, getRefence_file } = useRecommend()
@@ -73,7 +75,7 @@ const emit = defineEmits([
     'recommend-data' // 新增事件
 ])
 const inputContent = ref('')
-const selectedModel = ref('qwen-max')
+const selectedModel = ref('qwen-plus-latest')
 const selectedrag = ref('BOOK')
 
 const isGenerating = ref(false)
@@ -117,7 +119,8 @@ const toggleRecommend = () => {
 const modelNames = {
     'deepseek-r1': 'DeepSeek-R1',
     'gpt-4o': 'GPT-4o',
-    'qwen-max': 'Qwen-Max'
+    'qwen-max': 'Qwen-Max',
+    'qwen-plus-latest': 'Qwen-Plus-Latest',
 }
 
 const RAGNames = {

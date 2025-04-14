@@ -7,8 +7,7 @@
                     <select v-model="selectedModel" class="model-select">
                         <option value="gpt-4o">GPT-4o</option>
                         <option value="deepseek-r1">DeepSeek-R1</option>
-                        <option value="qwen-max">Qwen-Max</option>
-                        <option value="qwen-plus-latest">Qwen-Plus</option>
+                        <option value="qwen-max-latest">Qwen-Max</option>
                     </select>
                 </div>
                 <div class="rag-selector">
@@ -75,7 +74,7 @@ const emit = defineEmits([
     'recommend-data' // 新增事件
 ])
 const inputContent = ref('')
-const selectedModel = ref('qwen-plus-latest')
+const selectedModel = ref('qwen-max-latest')
 const selectedrag = ref('BOOK')
 
 const isGenerating = ref(false)
@@ -119,8 +118,7 @@ const toggleRecommend = () => {
 const modelNames = {
     'deepseek-r1': 'DeepSeek-R1',
     'gpt-4o': 'GPT-4o',
-    'qwen-max': 'Qwen-Max',
-    'qwen-plus-latest': 'Qwen-Plus-Latest',
+    'qwen-max-latest': 'Qwen-Max-Latest',
 }
 
 const RAGNames = {
@@ -235,7 +233,7 @@ const autoResizeTextarea = () => {
     padding: 8px 16px;
     border-width: 1.5px;
     border-radius: 8px;
-    width: 160px;
+    width: 180px;
     border: 2px solid #E5E7EB;
     background: #F8F9FA;
     color: #6b7280;
@@ -348,7 +346,7 @@ const autoResizeTextarea = () => {
 
     width: 100%;
     flex: 1;
-    max-width: 160px;
+    max-width: 180px;
 }
 
 .model-select {
@@ -386,7 +384,7 @@ const autoResizeTextarea = () => {
 
     width: 100%;
     flex: 1;
-    max-width: 160px;
+    max-width: 180px;
 }
 
 .rag-select {
